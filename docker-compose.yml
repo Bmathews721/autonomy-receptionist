@@ -1,0 +1,24 @@
+
+version: "3.9"
+services:
+  webhook:
+    build: ./services/webhook
+    ports: ["5000:5000"]
+    environment:
+      - AI_WS_URL=${AI_WS_URL:-wss://example.com/stream}
+  ivr:
+    build: ./services/ivr
+    ports: ["5001:5001"]
+    environment:
+      - BUSINESS_PHONE=${BUSINESS_PHONE:-(339) 364-3940}
+      - LOGS_TOKEN=${LOGS_TOKEN:-change-me-logs}
+      - RELAY_TOKEN=${RELAY_TOKEN:-change-me-relay}
+      - INTEGRATION_WEBHOOK_URL=${INTEGRATION_WEBHOOK_URL:-}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
+      - TWILIO_FROM=${TWILIO_FROM:-}
+    volumes:
+      - ./ivr_data:/data
+  ws_stub:
+    build: ./services/ws_stub
+    ports: ["8765:8765"]

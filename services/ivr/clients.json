@@ -1,0 +1,59 @@
+{
+  "+18579579141": {
+    "name": "Demo \u2013 Bryan\u2019s Business",
+    "plan": "Pro Plus",
+    "email": "contact@auai.cloud",
+    "sms": "+13393643940",
+    "business_hours": "Mon\u2013Fri 8am\u20138pm EST",
+    "address": "354 Neponset St, Canton, MA 02021",
+    "pricing_text": "Pro Plus demo pricing \u2014 all features unlocked.",
+    "website": "https://auai.cloud",
+    "preferred_greeting": "Thank you for calling Autonomy Receptionist \u2014 Pro Plus demo.",
+    "special_requests": [
+      "Always offer to transfer urgent calls immediately to the human line.",
+      "Politely decline solicitation calls.",
+      "Ask new patients if they\u2019d like to schedule online and text them the link."
+    ],
+    "schedule_url": "https://calendly.com/auai/demo",
+    "language": "en",
+    "tts_voice": "",
+    "lines": {
+      "+18579579141": "Main"
+    },
+    "lead_scoring": {
+      "hot_keywords": [
+        "book",
+        "urgent",
+        "quote",
+        "ready to start"
+      ],
+      "cold_keywords": [
+        "sales",
+        "solicitation"
+      ],
+      "rules": [
+        {
+          "if": "intent == 'booking'",
+          "score": 30
+        },
+        {
+          "if": "contains('urgent')",
+          "score": 20
+        },
+        {
+          "if": "contains('price')",
+          "score": 10
+        },
+        {
+          "if": "intent == 'decline_solicitation'",
+          "score": -50
+        }
+      ],
+      "hot_threshold": 30
+    },
+    "sms_relay": {
+      "enabled": true,
+      "disclaimer": "From the business via Autonomy."
+    }
+  }
+}

@@ -1,0 +1,20 @@
+
+name: Daily Digests
+on:
+  schedule:
+    - cron: "15 13 * * *"
+  workflow_dispatch: {}
+jobs:
+  run-digests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Email Digests
+        run: curl -sS -X POST "$IVR_HOST/digest/run?token=$DIGEST_TOKEN"
+        env:
+          IVR_HOST: ${{ secrets.IVR_HOST }}
+          DIGEST_TOKEN: ${{ secrets.DIGEST_TOKEN }}
+      - name: Trigger SMS Mini-Digests
+        run: curl -sS -X POST "$IVR_HOST/digest/sms?token=$DIGEST_SMS_TOKEN"
+        env:
+          IVR_HOST: ${{ secrets.IVR_HOST }}
+          DIGEST_SMS_TOKEN: ${{ secrets.DIGEST_SMS_TOKEN }}

@@ -1,0 +1,5 @@
+
+Flask==3.0.0
+twilio==9.1.0
+requests>=2.31.0
+faster-whisper==1.0.3
