@@ -1,4 +1,22 @@
 
+
+def _rotate_fallback_log(path="logs/fallback.log", max_bytes=1_000_000, backups=5):
+    import os, shutil
+    try:
+        if not os.path.exists(path):
+            return
+        if os.path.getsize(path) < max_bytes:
+            return
+        # Rotate: fallback.log -> fallback.log.1 -> ...
+        for i in range(backups, 0, -1):
+            src = f"{path}.{i-1}" if i>1 else path
+            dst = f"{path}.{i}"
+            if os.path.exists(src):
+                try: os.replace(src, dst)
+                except Exception: pass
+    except Exception:
+        pass
+
 def route_intent(text: str) -> str:
     t = (text or "").lower()
     if any(k in t for k in ["book", "appointment", "schedule", "reserve"]):
