@@ -17,13 +17,20 @@ fi
 
 echo "✅ Found service ID: $SERVICE_ID"
 
-# Commit & push
-git add .
-git commit -m "Update IVR code $(date +%Y-%m-%d_%H:%M:%S)" || true
-git push
+# Only commit/push if there are changes
+if [ -n "$(git status --porcelain)" ]; then
+  echo "📦 Changes detected → committing & pushing..."
+  git add .
+  git commit -m "Update IVR code $(date +%Y-%m-%d_%H:%M:%S)"
+  git push
+else
+  echo "ℹ️ No changes in repo → skipping commit & push."
+fi
 
 # Trigger redeploy
+echo "🚀 Triggering redeploy..."
 render deploys create "$SERVICE_ID"
 
 # Tail logs
+echo "📜 Tailing logs..."
 render logs "$SERVICE_ID" --live
