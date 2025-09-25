@@ -4,7 +4,7 @@
     "plan": "Pro Plus",
     "email": "contact@auai.cloud",
     "sms": "+13393643940",
-    "business_hours": "Mon-Fri 8am-8pm ET",
+    "business_hours": "Mon–Fri 8am–8pm EST",
     "address": "354 Neponset St, Canton, MA 02021",
     "pricing_text": "Pro Plus demo pricing — all features unlocked.",
     "website": "https://auai.cloud",
@@ -57,6 +57,6 @@
     }
   },
   "18579579141": {
-    "business_hours": "Mon-Fri 8am-8pm ET"
+    "business_hours": "Mon–Fri 8am–8pm EST"
   }
 }

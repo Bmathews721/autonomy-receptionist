@@ -1,18 +1,18 @@
 {
   "+18579579141": {
-    "name": "Demo – Bryan’s Business",
+    "name": "Demo \u2013 Bryan\u2019s Business",
     "plan": "Pro Plus",
     "email": "contact@auai.cloud",
     "sms": "+13393643940",
-    "business_hours": "Mon-Fri 8am-8pm ET",
+    "business_hours": "Mon\u2013Fri 8am\u20138pm EST",
     "address": "354 Neponset St, Canton, MA 02021",
-    "pricing_text": "Pro Plus demo pricing — all features unlocked.",
+    "pricing_text": "Pro Plus demo pricing \u2014 all features unlocked.",
     "website": "https://auai.cloud",
-    "preferred_greeting": "Thank you for calling Autonomy Receptionist — Pro Plus demo.",
+    "preferred_greeting": "Thank you for calling Autonomy Receptionist \u2014 Pro Plus demo.",
     "special_requests": [
       "Always offer to transfer urgent calls immediately to the human line.",
       "Politely decline solicitation calls.",
-      "Ask new patients if they’d like to schedule online and text them the link."
+      "Ask new patients if they\u2019d like to schedule online and text them the link."
     ],
     "schedule_url": "https://calendly.com/auai/demo",
     "language": "en",
@@ -55,8 +55,5 @@
       "enabled": true,
       "disclaimer": "From the business via Autonomy."
     }
-  },
-  "18579579141": {
-    "business_hours": "Mon-Fri 8am-8pm ET"
   }
 }
