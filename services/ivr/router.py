@@ -56,4 +56,8 @@ def intent_prompt(intent: str, text: str, client_info: dict | None = None) -> st
         return "Sure, I'll connect you to a representative now."
     if intent == "decline_solicitation":
         return "Thanks for reaching out. We aren't accepting sales or solicitation calls. Have a great day."
+    # 🛡️ Final fallback: never go silent
+    return ("I can help with our business hours, address, or pricing. Please ask about one of those.")
+    # 🛡️ Final fallback: never go silent
+    return ("I can help with our business hours, address, or pricing. Please ask about one of those.")
     return "I can help with booking, hours, pricing, or connecting you to a representative. What would you like to do?"
