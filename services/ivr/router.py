@@ -20,6 +20,12 @@ def intent_prompt(intent: str, text: str, client_info: dict | None = None) -> st
         return "I can help with booking. What date and time works best for you? You can also leave your name and number."
     if intent == "hours":
         hours = (client_info or {}).get("business_hours")
+    # Fallback: if user text mentions "hours", always reply with business_hours
+    if "hours" in text.lower():
+        if hours:
+            return f"Our business hours are {hours}."
+        else:
+            return "Sorry, I don’t have our business hours on file."
     if intent.lower() in ("hours", "business hours", "when are you open", "open hours"):
         if hours:
             return f"Our business hours are {hours}."
