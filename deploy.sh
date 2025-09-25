@@ -1,23 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage:
-#   ./deploy.sh <alias> [--no-deploy] [--no-logs] [--message "msg"]
-
 # Map aliases to service IDs
 declare -A SERVICES=(
-  [ivr1]="srv-d3aom11gv73c739dchdg"
-  [ivr2]="srv-d3aom11gv73c739dchcg"
-  [ivr3]="srv-d3aom11gv73c739dchd0"
+  [ivr-prod]="srv-d3aom11gv73c739dchdg"
+  [webhook]="srv-d3aom11gv73c739dchcg"
+  [ws-stub]="srv-d3aom11gv73c739dchd0"
 )
 
-ALIAS="${1:-}"
+ALIAS="${1:-ivr-prod}" # default to production IVR
 shift || true
-
-if [[ -z "$ALIAS" ]]; then
-  echo "Usage: $0 <alias: ivr1|ivr2|ivr3> [--no-deploy] [--no-logs] [--message \"msg\"]"
-  exit 1
-fi
 
 SERVICE_ID="${SERVICES[$ALIAS]:-}"
 if [[ -z "$SERVICE_ID" ]]; then
