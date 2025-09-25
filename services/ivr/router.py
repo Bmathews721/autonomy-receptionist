@@ -16,6 +16,14 @@ def route_intent(text: str) -> str:
     return "fallback"
 
 def intent_prompt(intent: str, text: str, client_info: dict | None = None) -> str:
+    # 🔒 Global fallback: always answer if caller mentions hours/open/close
+    text_l = text.lower()
+    hours = (client_info or {}).get("business_hours")
+    if any(word in text_l for word in ("hours", "open", "close")):
+        if hours:
+            return f"Our business hours are {hours}."
+        else:
+            return "Sorry, I don’t have our business hours on file."
     if intent == "booking":
         return "I can help with booking. What date and time works best for you? You can also leave your name and number."
     if intent == "hours":
