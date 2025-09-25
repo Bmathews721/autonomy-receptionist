@@ -60,4 +60,13 @@ def intent_prompt(intent: str, text: str, client_info: dict | None = None) -> st
     return ("I can help with our business hours, address, or pricing. Please ask about one of those.")
     # 🛡️ Final fallback: never go silent
     return ("I can help with our business hours, address, or pricing. Please ask about one of those.")
+    # 🛡️ Final fallback: never go silent + log unknown requests
+    try:
+        print("=== FALLBACK TRIGGERED ===")
+        print("Unmatched text:", repr(text))
+        print("Known client:", client_info.get("name") if client_info else None)
+    except Exception as e:
+        print("Fallback logging error:", e)
+
+    return ("I can help with our business hours, address, or pricing. Please ask about one of those.")
     return "I can help with booking, hours, pricing, or connecting you to a representative. What would you like to do?"
