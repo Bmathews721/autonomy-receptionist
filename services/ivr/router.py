@@ -93,7 +93,7 @@ def intent_prompt(intent: str, text: str, client_info: dict | None = None) -> st
 
     try:
         os.makedirs("logs", exist_ok=True)
-                log_fallback_event(text, client_info)
+        log_fallback_event(text, client_info)
         print("=== FALLBACK TRIGGERED ===", repr(text))
     except Exception as e:
         print("Fallback logging error:", e)
