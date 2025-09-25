@@ -255,3 +255,19 @@ def fallback_log():
     except FileNotFoundError:
         return "No fallback log found yet.", 404
 
+
+from flask import request
+from twilio.twiml.voice_response import VoiceResponse
+
+@app.route("/admin/say-hours")
+def admin_say_hours():
+    # ?called= lets you override which number to look up; defaults to your prod number
+    called = request.args.get("called", "+18579579141")
+    info = get_client_info(called)
+    hours = (info or {}).get("business_hours")
+    vr = VoiceResponse()
+    if hours:
+        speak(vr, f"Our business hours are {hours}.", info)
+    else:
+        speak(vr, "Sorry, I don’t have our business hours on file.", info)
+    return str(vr)
