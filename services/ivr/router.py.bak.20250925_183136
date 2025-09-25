@@ -69,4 +69,17 @@ def intent_prompt(intent: str, text: str, client_info: dict | None = None) -> st
         print("Fallback logging error:", e)
 
     return ("I can help with our business hours, address, or pricing. Please ask about one of those.")
+    # 🛡️ Final fallback: never go silent + log unknown requests
+    import os
+    from datetime import datetime
+
+    try:
+        os.makedirs("logs", exist_ok=True)
+        with open("logs/fallback.log", "a", encoding="utf-8") as f:
+            f.write(f"[{datetime.utcnow().isoformat()}] text={repr(text)} client={client_info.get("name") if client_info else None}\n")
+        print("=== FALLBACK TRIGGERED ===", repr(text))
+    except Exception as e:
+        print("Fallback logging error:", e)
+
+    return ("I can help with our business hours, address, or pricing. Please ask about one of those.")
     return "I can help with booking, hours, pricing, or connecting you to a representative. What would you like to do?"
