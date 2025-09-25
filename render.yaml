@@ -1,0 +1,17 @@
+
+services:
+  - type: web
+    name: autonomy-webhook
+    env: docker
+    plan: free
+    rootDir: ./services/webhook
+  - type: web
+    name: autonomy-ivr
+    env: docker
+    plan: free
+    rootDir: ./services/ivr
+  - type: web
+    name: autonomy-ws-stub
+    env: docker
+    plan: free
+    rootDir: ./services/ws_stub
