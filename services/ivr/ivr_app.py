@@ -244,3 +244,14 @@ def relay_sms():
 if __name__ == "__main__":
     import os
     app.run(host="0.0.0.0", port=int(os.getenv("PORT","5001")))
+
+from flask import send_file
+
+@app.route("/admin/fallback-log")
+def fallback_log():
+    log_path = "logs/fallback.log"
+    try:
+        return send_file(log_path, mimetype="text/plain", as_attachment=False, download_name="fallback.log")
+    except FileNotFoundError:
+        return "No fallback log found yet.", 404
+
