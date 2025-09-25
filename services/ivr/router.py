@@ -94,7 +94,8 @@ def intent_prompt(intent: str, text: str, client_info: dict | None = None) -> st
     try:
         os.makedirs("logs", exist_ok=True)
         with open("logs/fallback.log", "a", encoding="utf-8") as f:
-            f.write(f"[{datetime.utcnow().isoformat()}] text={repr(text)} client={client_info.get('name') if client_info else None}\n")
+    log_line = (f"[{datetime.utcnow().isoformat()}] " f"text={repr(text)} " f"client={(client_info.get('name') if client_info else None)}\n")
+    f.write(log_line)
         print("=== FALLBACK TRIGGERED ===", repr(text))
     except Exception as e:
         print("Fallback logging error:", e)
