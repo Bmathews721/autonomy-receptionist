@@ -353,9 +353,6 @@ def voice_route():
 
 # 3) Make SMS consent robust if body is missing (never error)
 
-git add services/ivr/ivr_app.py
-git commit -m "Hours: fixed spoken phrasing; robust /voice/route + sms-consent fallback" || true
-git push || true
 
 # --- Override: speak hours in a concise, demo-friendly way ---
 def hours_sentence(_h):
