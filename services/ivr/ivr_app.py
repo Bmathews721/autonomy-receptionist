@@ -367,3 +367,36 @@ def admin_debug_client():
         "client_info": info,
         "available_keys": keys
     })
+
+# --- Admin intercepts without decorators (works regardless of blueprints) ---
+try:
+    from flask import request, jsonify
+    from twilio.twiml.voice_response import VoiceResponse
+except Exception as _e:
+    print("admin intercept import error:", _e)
+
+@app.before_request
+def _admin_intercepts():
+    try:
+        p = request.path
+        if p == "/admin/shim-ok":
+            try:
+                rules = sorted([r.rule for r in app.url_map.iter_rules()])
+            except Exception:
+                rules = []
+            return jsonify({"ok": True, "source": "services/ivr/ivr_app.py", "routes": rules})
+
+        if p == "/admin/say-hours":
+            called = request.args.get("called", "+18579579141")
+            info = get_client_info(called)
+            hours = (info or {}).get("business_hours")
+            vr = VoiceResponse()
+            if hours:
+                speak(vr, f"Our business hours are {hours}.", info)
+            else:
+                speak(vr, "Sorry, I don’t have our business hours on file.", info)
+            return str(vr)
+    except Exception as e:
+        print("admin intercept error:", e)
+        # fall through to normal handling
+        return None
