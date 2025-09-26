@@ -176,7 +176,8 @@ def voice_route():
         return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>Connecting you now.</Say>
-  <Dial timeout="25" answerOnBridge="true"{_caller_attr()} action="/voice/transfer-result" method="POST">
+  {_record_say()}
+  <Dial timeout="25" answerOnBridge="true"{_record_attrs()}{_caller_attr()} action="/voice/transfer-result" method="POST">
     <Number>{num}</Number>
   </Dial>
   <Say>No one could be reached.</Say>
@@ -329,7 +330,7 @@ def test_dial():
     return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>Placing a test transfer.</Say>
-  <Dial timeout="25" answerOnBridge="true"{_caller_attr()} action="/voice/transfer-result" method="POST">
+  <Dial timeout="25" answerOnBridge="true"{_record_attrs()}{_caller_attr()} action="/voice/transfer-result" method="POST">
     <Number>{num}</Number>
   </Dial>
   <Say>We could not complete the test transfer.</Say>
@@ -356,7 +357,7 @@ def test_call():
     return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>Placing a test transfer.</Say>
-  <Dial timeout="25" answerOnBridge="true"{_caller_attr()} action="/voice/transfer-result" method="POST">
+  <Dial timeout="25" answerOnBridge="true"{_record_attrs()}{_caller_attr()} action="/voice/transfer-result" method="POST">
     <Number>{num}</Number>
   </Dial>
   <Say>We could not complete the test transfer.</Say>
@@ -404,3 +405,18 @@ def smart_menu_twiml():
   <Say>You can also leave a short message after the tone.</Say>
   <Record maxLength="90" playBeep="true" action="/voice/voicemail-done" method="POST"/>
 </Response>'''
+
+# --- Call recording toggle ---
+def _record_enabled():
+    return os.getenv("CALL_RECORD","0").lower() in ("1","true","yes")
+
+def _record_attrs():
+    return ' record="record-from-answer" recordingStatusCallback="/voice/recording-status"' if _record_enabled() else ""
+
+def _record_say():
+    return '<Say>For quality and training, this call may be recorded.</Say>' if _record_enabled() else ''
+
+@app.route("/voice/recording-status", methods=["POST","GET"])
+def recording_status():
+    # minimal ack; you can log request.values if needed
+    return ("", 204)
