@@ -108,3 +108,40 @@ def voicemail_done():
   <Pause length="1"/><Say>Would you like anything else?</Say>
   <Redirect>/voice</Redirect>
 </Response>""")
+
+# --- Override: richer speech intent routing (human/voicemail synonyms) ---
+def route_intent(text):
+    t = (text or "").lower().strip()
+    synonyms_operator = [
+        "operator","human","agent","representative","someone","real person","live person",
+        "talk to a human","talk to someone","speak to a human","speak to someone",
+        "patch me through","transfer me","connect me","customer service","support",
+        "talk to a person","put me through","get me a human"
+    ]
+    synonyms_voicemail = [
+        "leave a message","voicemail","voice mail","record a message","leave voicemail",
+        "i want to leave a message","can i leave a message"
+    ]
+    if any(k in t for k in ["hour","open","close","closing","time","business hours"]): return "hours"
+    if any(k in t for k in ["price","pricing","cost","plan","subscription"]): return "pricing"
+    if any(k in t for k in ["location","address","where","directions"]): return "location"
+    if any(k in t for k in synonyms_voicemail): return "voicemail"
+    if any(k in t for k in synonyms_operator): return "operator"
+    if any(k in t for k in ["repeat","again","menu","options"]): return "repeat"
+    return "unknown"
+
+# --- Whisper to your cell before bridge (press 1 to accept) ---
+@app.route("/voice/screen", methods=["GET","POST"])
+def screen():
+    d = (request.values.get("Digits") or "").strip()
+    if d == "1":
+        return _xml("""<?xml version="1.0" encoding="UTF-8"?><Response>
+  <Say>Connecting.</Say>
+</Response>""")
+    return _xml("""<?xml version="1.0" encoding="UTF-8"?><Response>
+  <Gather numDigits="1" action="/voice/screen" method="POST" timeout="8">
+    <Say>Autonomy demo call. Press 1 to accept.</Say>
+  </Gather>
+  <Say>No input. Goodbye.</Say>
+  <Hangup/>
+</Response>""")
