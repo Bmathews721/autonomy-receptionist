@@ -145,3 +145,130 @@ def screen():
   <Say>No input. Goodbye.</Say>
   <Hangup/>
 </Response>""")
+
+# --- SMS helper screens: offer to text the info and send it on consent ---
+from urllib.parse import quote
+
+def _hours_text():
+    h = load_hours()
+    parts = [f"Mon {h.get('mon','')}", f"Tue {h.get('tue','')}", f"Wed {h.get('wed','')}",
+             f"Thu {h.get('thu','')}", f"Fri {h.get('fri','')}", f"Sat {h.get('sat','')}", f"Sun {h.get('sun','')}"]
+    return "Autonomy Receptionist — Hours: " + "; ".join(parts)
+
+def _pricing_text():
+    return "Autonomy Receptionist — Pricing: $200/mo Starter, $300/mo Pro. Details: autonomy-ai.com"
+
+def _location_text():
+    return "Autonomy Receptionist — We operate virtually and support clients anywhere. Info: autonomy-ai.com"
+
+@app.route("/voice/sms-offer", methods=["POST","GET"])
+def sms_offer():
+    include = (request.args.get("include") or "hours").lower()
+    # Build the body now and pass it along (URL-encoded) to the consent handler
+    if include == "pricing":
+        body = _pricing_text()
+    elif include == "location":
+        body = _location_text()
+    else:
+        body = _hours_text()
+        include = "hours"
+
+    enc = quote(body)
+    return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Gather input="speech dtmf" numDigits="1" action="/voice/sms-consent?include={include}&body={enc}" method="POST"
+          language="en-US" timeout="6" speechTimeout="auto">
+    <Say>Would you like that sent by text? Say yes, or press 1 for yes. Say no to skip.</Say>
+  </Gather>
+  <Say>No input received.</Say>
+  <Redirect>/voice</Redirect>
+</Response>""")
+
+@app.route("/voice/sms-consent", methods=["POST","GET"])
+def sms_consent():
+    digit = (request.values.get("Digits") or "").strip()
+    speech = (request.values.get("SpeechResult") or "").lower().strip()
+    include = (request.args.get("include") or "hours").lower()
+    body = request.args.get("body") or ""
+
+    said_yes = (digit == "1") or any(k in speech for k in ["yes","yeah","yep","sure","please","ok","okay","text me","send it"])
+    if said_yes and body:
+        # Send SMS to caller (Twilio uses the current call's From by default if no "to" attribute is set)
+        return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Sms>{body}</Sms>
+  <Say>Sent. Anything else?</Say>
+  <Redirect>/voice</Redirect>
+</Response>""")
+
+    return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>No problem. Anything else?</Say>
+  <Redirect>/voice</Redirect>
+</Response>""")
+
+# --- Override router to add SMS offer after answering ---
+@app.route("/voice/route", methods=["POST","GET"])
+def voice_route():
+    digit = (request.values.get("Digits") or "").strip()
+    speech = (request.values.get("SpeechResult") or "").strip()
+    intent = {"1":"hours","2":"pricing","3":"location","0":"operator"}.get(digit) if digit else route_intent(speech)
+
+    if intent == "hours":
+        brief = hours_sentence(load_hours())
+        return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Our hours are: {brief}.</Say>
+  <Pause length="1"/>
+  <Redirect>/voice/sms-offer?include=hours</Redirect>
+</Response>""")
+
+    if intent == "pricing":
+        return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Our plans start at two hundred dollars per month, with a three hundred dollar option for added features.</Say>
+  <Pause length="1"/>
+  <Redirect>/voice/sms-offer?include=pricing</Redirect>
+</Response>""")
+
+    if intent == "location":
+        return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>We operate virtually, so we can help you from anywhere.</Say>
+  <Pause length="1"/>
+  <Redirect>/voice/sms-offer?include=location</Redirect>
+</Response>""")
+
+    if intent == "voicemail":
+        return _xml("""<?xml version="1.0" encoding="UTF-8"?><Response>
+  <Say>Please leave a short message after the tone. When you are done, you can hang up.</Say>
+  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done" method="POST"/>
+</Response>""")
+
+    if intent == "operator":
+        num = get_forward_number()
+        if not num:
+            return _xml("""<?xml version="1.0" encoding="UTF-8"?><Response>
+  <Say>The operator transfer is not configured yet.</Say>
+  <Pause length="1"/><Redirect>/voice</Redirect>
+</Response>""")
+        return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Connecting you now.</Say>
+  <Dial timeout="25" answerOnBridge="true" action="/voice/transfer-result" method="POST">
+    <Number url="/voice/screen">{num}</Number>
+  </Dial>
+  <Say>No one could be reached.</Say>
+  <Pause length="1"/><Say>Would you like to leave a message?</Say>
+  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done" method="POST"/>
+</Response>""")
+
+    if intent == "repeat":
+        return _xml(menu_twiml())
+
+    # Unknown → reprompt then back to menu
+    return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Sorry, I didn't catch that.</Say>
+  <Redirect>/voice</Redirect>
+</Response>""")
