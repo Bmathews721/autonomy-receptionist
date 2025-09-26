@@ -237,3 +237,7 @@ def route_intent(text):
     ]): return "operator"
     if any(k in t for k in ["repeat","again","menu","options"]): return "repeat"
     return "unknown"
+@app.route("/debug/intent", methods=["POST","GET"])
+def debug_intent():
+    speech = (request.values.get("SpeechResult") or request.args.get("q","")).strip()
+    return jsonify({"speech": speech, "intent": route_intent(speech)}), 200
