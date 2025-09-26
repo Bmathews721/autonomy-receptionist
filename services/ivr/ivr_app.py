@@ -163,7 +163,7 @@ def voice_route():
         return _xml('''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>Please leave a short message after the tone. When you are done, you can hang up.</Say>
-  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done" method="POST"/>
+  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done2" method="POST"/>
 </Response>''')
     if intent == "operator":
         num = get_forward_number()
@@ -182,7 +182,7 @@ def voice_route():
   </Dial>
   <Say>No one could be reached.</Say>
   <Pause length="1"/><Say>Would you like to leave a message?</Say>
-  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done" method="POST"/>
+  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done2" method="POST"/>
 </Response>''')
     if intent == "repeat":
         return _xml(menu_twiml())
@@ -238,7 +238,7 @@ def transfer_result():
 <Response>
   <Say>Sorry, we couldn't complete the transfer.</Say>
   <Pause length="1"/><Say>Please leave a short message after the tone.</Say>
-  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done" method="POST"/>
+  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done2" method="POST"/>
 </Response>''')
 
 @app.route("/voice/voicemail-done", methods=["POST","GET"])
@@ -403,7 +403,7 @@ def smart_menu_twiml():
   </Gather>
   <Say>No input received.</Say>
   <Say>You can also leave a short message after the tone.</Say>
-  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done" method="POST"/>
+  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done2" method="POST"/>
 </Response>'''
 
 # --- Call recording toggle ---
@@ -420,3 +420,73 @@ def _record_say():
 def recording_status():
     # minimal ack; you can log request.values if needed
     return ("", 204)
+
+# --- Alert helpers (email first, SMS optional) ---
+def _send_email_sg(subject: str, text: str) -> bool:
+    api = (os.getenv("SENDGRID_API_KEY") or "").strip()
+    to  = (os.getenv("ALERT_EMAIL_TO") or "").strip()
+    frm = (os.getenv("ALERT_EMAIL_FROM") or "").strip()
+    if not (api and to and frm): return False
+    payload = {
+        "personalizations":[{"to":[{"email":x.strip()} for x in to.split(",") if x.strip()]}],
+        "from":{"email":frm},
+        "subject":subject,
+        "content":[{"type":"text/plain","value":text}]
+    }
+    try:
+        req = urllib.request.Request(
+            "https://api.sendgrid.com/v3/mail/send",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Authorization":f"Bearer {api}","Content-Type":"application/json"}
+        )
+        urllib.request.urlopen(req, timeout=6).read()
+        return True
+    except Exception:
+        return False
+
+def _send_sms_alert(text: str) -> bool:
+    # Only if you want SMS alerts AND your A2P is approved (SMS_ENABLED=1)
+    if (os.getenv("SMS_ENABLED","0").lower() not in ("1","true","yes")): return False
+    to = (os.getenv("ALERT_SMS_TO") or "").strip()
+    if not to: return False
+    svc = (os.getenv("SMS_SERVICE_SID") or "").strip()
+    frm = (os.getenv("SMS_FROM") or "").strip()
+    sid = (os.getenv("ACCOUNT_SID") or os.getenv("TWILIO_ACCOUNT_SID") or "").strip()
+    tok = (os.getenv("AUTH_TOKEN") or os.getenv("TWILIO_AUTH_TOKEN") or "").strip()
+    if not (sid and tok and (svc or frm)): return False
+    data = {"To": to, "Body": text}
+    if svc: data["MessagingServiceSid"] = svc
+    else:   data["From"] = frm
+    try:
+        req = urllib.request.Request(
+            f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json",
+            data=urllib.parse.urlencode(data).encode("utf-8")
+        )
+        b64 = base64.b64encode(f"{sid}:{tok}".encode()).decode()
+        req.add_header("Authorization", f"Basic {b64}")
+        urllib.request.urlopen(req, timeout=6).read()
+        return True
+    except Exception:
+        return False
+
+def _send_alert(subject: str, text: str):
+    if _send_email_sg(subject, text): return "email"
+    if _send_sms_alert(text):         return "sms"
+    return "none"
+@app.route("/voice/voicemail-done2", methods=["POST","GET"])
+def voicemail_done2():
+    rec = (request.values.get("RecordingUrl") or "").strip()
+    caller = (request.values.get("From") or "").strip()
+    dur = (request.values.get("RecordingDuration") or "").strip()
+    if rec:
+        try:
+            _send_alert("New voicemail",
+                f"From: {caller}\nDuration: {dur}s\nRecording: {rec}.mp3")
+        except Exception:
+            pass
+    return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Thanks, we received your message.</Say>
+  <Pause length="1"/><Say>Would you like anything else?</Say>
+  <Redirect>/voice</Redirect>
+</Response>''')
