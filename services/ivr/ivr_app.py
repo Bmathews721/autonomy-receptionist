@@ -174,7 +174,7 @@ def voice_route():
         return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>Connecting you now.</Say>
-  <Dial timeout="25" answerOnBridge="true" action="/voice/transfer-result" method="POST">
+  <Dial timeout="25" answerOnBridge="true"{_caller_attr()} action="/voice/transfer-result" method="POST">
     <Number url="/voice/screen">{num}</Number>
   </Dial>
   <Say>No one could be reached.</Say>
@@ -202,7 +202,14 @@ def screen():
 </Response>''')
 @app.route("/voice/transfer-result", methods=["POST","GET"])
 def transfer_result():
+    global LAST_TRANSFER
     status = (request.values.get("DialCallStatus") or "").lower()
+    LAST_TRANSFER = {
+        "status": status,
+        "dial_sid": (request.values.get("DialCallSid") or ""),
+        "to": (request.values.get("To") or ""),
+        "from": (request.values.get("From") or "")
+    }
     if status in ("completed","answered"):
         return _xml('''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -292,3 +299,26 @@ def sms_consent2():
   <Say>No problem. Anything else?</Say>
   <Redirect>/voice</Redirect>
 </Response>''')
+def _caller_attr():
+    cid = (os.getenv("TWILIO_CALLER_ID") or "").strip()
+    return f' callerId="{cid}"' if cid else ""
+@app.get("/admin/forward")
+def admin_forward():
+    return jsonify({"forward_number": get_forward_number()}), 200
+@app.route("/voice/test-dial", methods=["POST","GET"])
+def test_dial():
+    num = get_forward_number()
+    if not num:
+        return _xml('<?xml version="1.0" encoding="UTF-8"?><Response><Say>No forward number is configured.</Say></Response>')
+    return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Placing a test transfer.</Say>
+  <Dial timeout="25" answerOnBridge="true"{_caller_attr()} action="/voice/transfer-result" method="POST">
+    <Number>{num}</Number>
+  </Dial>
+  <Say>We could not complete the test transfer.</Say>
+</Response>''')
+LAST_TRANSFER = {}
+@app.get("/admin/last-transfer")
+def admin_last_transfer():
+    return jsonify(LAST_TRANSFER or {"info":"none yet"}), 200
