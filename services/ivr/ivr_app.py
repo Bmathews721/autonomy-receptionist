@@ -105,13 +105,21 @@ def voice_route():
 <Response>
   <Say>Our hours are Monday through Friday, nine A M to five P M. We are closed Saturday and Sunday.</Say>
   <Pause length="1"/>
-  <Redirect>https://autonomy-ivr.onrender.com/voice/sms-offer?include=hours</Redirect>
+  <Gather input="speech" action="/voice/sms-consent2?include=hours" method="POST" language="en-US" timeout="6" speechTimeout="auto">
+    <Say>Would you like that sent by text? Say yes to receive a text, or say no to skip.</Say>
+  </Gather>
+  <Say>No input received.</Say>
+  <Redirect>/voice</Redirect>
 </Response>''')
     if intent == "pricing":
         return _xml('''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>Our plans start at two hundred dollars per month, with a three hundred dollar option for added features.</Say>
   <Pause length="1"/>
+  <Gather input="speech" action="/voice/sms-consent2?include=pricing" method="POST" language="en-US" timeout="6" speechTimeout="auto">
+    <Say>Would you like that sent by text? Say yes to receive a text, or say no to skip.</Say>
+  </Gather>
+  <Say>No input received.</Say>
   <Redirect>/voice</Redirect>
 </Response>''')
     if intent == "location":
@@ -119,6 +127,10 @@ def voice_route():
 <Response>
   <Say>We operate virtually, so we can help you from anywhere.</Say>
   <Pause length="1"/>
+  <Gather input="speech" action="/voice/sms-consent2?include=location" method="POST" language="en-US" timeout="6" speechTimeout="auto">
+    <Say>Would you like that sent by text? Say yes to receive a text, or say no to skip.</Say>
+  </Gather>
+  <Say>No input received.</Say>
   <Redirect>/voice</Redirect>
 </Response>''')
     if intent == "sms_hours":
