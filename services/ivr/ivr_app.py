@@ -73,7 +73,7 @@ def menu_twiml():
     hints = "hours, pricing, location, operator, human, speak to a person, address"
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Gather input="speech dtmf" numDigits="1" action="/voice/route" method="POST"
+  <Gather input="speech" action="/voice/route" method="POST"
           language="en-US" hints="{hints}" timeout="6" speechTimeout="auto">
     <Say>{prompt}</Say>
   </Gather>
@@ -176,9 +176,9 @@ def sms_offer():
     enc = quote(body)
     return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Gather input="speech dtmf" numDigits="1" action="/voice/sms-consent?include={include}&body={enc}" method="POST"
+  <Gather input="speech" action="/voice/sms-consent?include={include}&body={enc}" method="POST"
           language="en-US" timeout="6" speechTimeout="auto">
-    <Say>Would you like that sent by text? Say yes, or press 1 for yes. Say no to skip.</Say>
+    <Say>Would you like that sent by text? Say yes to receive a text, or say no to skip.</Say>
   </Gather>
   <Say>No input received.</Say>
   <Redirect>/voice</Redirect>
@@ -186,7 +186,6 @@ def sms_offer():
 
 @app.route("/voice/sms-consent", methods=["POST","GET"])
 def sms_consent():
-    digit = (request.values.get("Digits") or "").strip()
     speech = (request.values.get("SpeechResult") or "").lower().strip()
     include = (request.args.get("include") or "hours").lower()
     body = request.args.get("body") or ""
@@ -210,9 +209,8 @@ def sms_consent():
 # --- Override router to add SMS offer after answering ---
 @app.route("/voice/route", methods=["POST","GET"])
 def voice_route():
-    digit = (request.values.get("Digits") or "").strip()
     speech = (request.values.get("SpeechResult") or "").strip()
-    intent = {"1":"hours","2":"pricing","3":"location","0":"operator"}.get(digit) if digit else route_intent(speech)
+    intent = route_intent(speech)
 
     if intent == "hours":
         brief = hours_sentence(load_hours())
