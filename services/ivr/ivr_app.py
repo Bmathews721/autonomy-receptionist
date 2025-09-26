@@ -38,26 +38,158 @@ def route_intent(text):
     ]): return "operator"
     if any(k in t for k in ["repeat","again","menu","options"]): return "repeat"
     return "unknown"
-@app.route("/", methods=["GET","POST"])
-def root(): return "Autonomy IVR up", 200
-
-@app.get("/admin/say-hours")
-def say_hours(): return jsonify(load_hours()), 200
-
-@app.route("/twilio/ping", methods=["GET","POST"])
-def ping():
-    return _xml('<?xml version="1.0" encoding="UTF-8"?><Response><Say>Autonomy IVR is online.</Say><Redirect>/voice</Redirect></Response>')
-
 @app.errorhandler(Exception)
 def on_error(e):
     traceback.print_exc(file=sys.stderr)
     return _xml('<?xml version="1.0" encoding="UTF-8"?><Response><Say>Sorry, we hit a snag.</Say><Pause length="1"/><Redirect>/voice</Redirect></Response>')
-
 def menu_twiml():
     prompt = "Welcome to Autonomy Receptionist. You can say things like, what are your hours, pricing, or location."
     hints = "hours, pricing, location, operator, human, speak to a person, address, leave a message, voicemail, connect me"
-    return f'<?xml version="1.0" encoding="UTF-8"?><Response><Gather input="speech" action="/voice/route" method="POST" language="en-US" hints="{hints}" timeout="6" speechTimeout="auto"><Say>{prompt}</Say></Gather><Say>No input received.</Say><Redirect>/voice</Redirect></Response>'
-
+    return f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Gather input="speech" action="/voice/route" method="POST"
+          language="en-US" hints="{hints}" timeout="6" speechTimeout="auto">
+    <Say>{prompt}</Say>
+  </Gather>
+  <Say>No input received.</Say>
+  <Redirect>/voice</Redirect>
+</Response>'''
 @app.route("/voice", methods=["POST","GET"])
 def voice():
     return _xml(menu_twiml())
+def _hours_text():
+    h = load_hours()
+    return "Autonomy Receptionist — Hours: Mon %s; Tue %s; Wed %s; Thu %s; Fri %s; Sat %s; Sun %s" % (
+        h.get("mon",""),h.get("tue",""),h.get("wed",""),h.get("thu",""),h.get("fri",""),h.get("sat",""),h.get("sun","")
+    )
+def _pricing_text(): return "Autonomy Receptionist — Pricing: $200/mo Starter, $300/mo Pro."
+def _location_text(): return "Autonomy Receptionist — We operate virtually and support clients anywhere."
+
+@app.route("/voice/sms-offer", methods=["POST","GET"])
+def sms_offer():
+    include = (request.args.get("include") or "hours").lower()
+    body = _hours_text() if include=="hours" else _pricing_text() if include=="pricing" else _location_text()
+    enc = quote(body)
+    return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Gather input="speech" action="/voice/sms-consent?include={include}&body={enc}" method="POST"
+          language="en-US" timeout="6" speechTimeout="auto">
+    <Say>Would you like that sent by text? Say yes to receive a text, or say no to skip.</Say>
+  </Gather>
+  <Say>No input received.</Say>
+  <Redirect>/voice</Redirect>
+</Response>''')
+@app.route("/voice/sms-consent", methods=["POST","GET"])
+def sms_consent():
+    speech = (request.values.get("SpeechResult") or "").lower().strip()
+    body = unquote(request.args.get("body") or "Autonomy Receptionist")
+    said_yes = any(k in speech for k in ["yes","yeah","yep","sure","please","ok","okay","text me","send it"])
+    if said_yes and body:
+        return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Sms>{body}</Sms>
+  <Say>Sent. Anything else?</Say>
+  <Redirect>/voice</Redirect>
+</Response>''')
+    return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>No problem. Anything else?</Say>
+  <Redirect>/voice</Redirect>
+</Response>''')
+@app.route("/voice/route", methods=["POST","GET"])
+def voice_route():
+    speech = (request.values.get("SpeechResult") or "").strip()
+    intent = route_intent(speech)
+    if intent == "hours":
+        return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Our hours are Monday through Friday, nine A M to five P M. We are closed Saturday and Sunday.</Say>
+  <Pause length="1"/>
+  <Redirect>/voice/sms-offer?include=hours</Redirect>
+</Response>''')
+    if intent == "pricing":
+        return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Our plans start at two hundred dollars per month, with a three hundred dollar option for added features.</Say>
+  <Pause length="1"/>
+  <Redirect>/voice/sms-offer?include=pricing</Redirect>
+</Response>''')
+    if intent == "location":
+        return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>We operate virtually, so we can help you from anywhere.</Say>
+  <Pause length="1"/>
+  <Redirect>/voice/sms-offer?include=location</Redirect>
+</Response>''')
+    if intent == "voicemail":
+        return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Please leave a short message after the tone. When you are done, you can hang up.</Say>
+  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done" method="POST"/>
+</Response>''')
+    if intent == "operator":
+        num = get_forward_number()
+        if not num:
+            return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>The operator transfer is not configured yet.</Say>
+  <Pause length="1"/><Redirect>/voice</Redirect>
+</Response>''')
+        return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Connecting you now.</Say>
+  <Dial timeout="25" answerOnBridge="true" action="/voice/transfer-result" method="POST">
+    <Number url="/voice/screen">{num}</Number>
+  </Dial>
+  <Say>No one could be reached.</Say>
+  <Pause length="1"/><Say>Would you like to leave a message?</Say>
+  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done" method="POST"/>
+</Response>''')
+    if intent == "repeat":
+        return _xml(menu_twiml())
+    return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Sorry, I didn’t catch that.</Say>
+  <Redirect>/voice</Redirect>
+</Response>''')
+@app.route("/voice/screen", methods=["GET","POST"])
+def screen():
+    d = (request.values.get("Digits") or "").strip()
+    if d == "1": return _xml('<?xml version="1.0" encoding="UTF-8"?><Response><Say>Connecting.</Say></Response>')
+    return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Gather numDigits="1" action="/voice/screen" method="POST" timeout="8">
+    <Say>Autonomy demo call. Press 1 to accept.</Say>
+  </Gather>
+  <Say>No input. Goodbye.</Say>
+  <Hangup/>
+</Response>''')
+@app.route("/voice/transfer-result", methods=["POST","GET"])
+def transfer_result():
+    status = (request.values.get("DialCallStatus") or "").lower()
+    if status in ("completed","answered"):
+        return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Thanks for speaking with us.</Say>
+  <Pause length="1"/><Say>Anything else?</Say>
+  <Redirect>/voice</Redirect>
+</Response>''')
+    return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Sorry, we couldn't complete the transfer.</Say>
+  <Pause length="1"/><Say>Please leave a short message after the tone.</Say>
+  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done" method="POST"/>
+</Response>''')
+
+@app.route("/voice/voicemail-done", methods=["POST","GET"])
+def voicemail_done():
+    return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Thanks, we received your message.</Say>
+  <Pause length="1"/><Say>Would you like anything else?</Say>
+  <Redirect>/voice</Redirect>
+</Response>''')
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT","10000"))
+    app.run(host="0.0.0.0", port=port)
