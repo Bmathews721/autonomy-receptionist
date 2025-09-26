@@ -60,28 +60,6 @@ def menu_twiml():
 
 @app.route("/voice", methods=["POST","GET"])
 def voice(): return _xml(menu_twiml())
-@app.route("/", methods=["GET","POST"])
-def root(): return "Autonomy IVR up", 200
-
-@app.get("/admin/say-hours")
-def say_hours(): return jsonify(load_hours()), 200
-
-@app.route("/twilio/ping", methods=["GET","POST"])
-def ping():
-    return _xml('<?xml version="1.0" encoding="UTF-8"?><Response><Say>Autonomy IVR is online.</Say><Redirect>/voice</Redirect></Response>')
-
-@app.errorhandler(Exception)
-def on_error(e):
-    traceback.print_exc(file=sys.stderr)
-    return _xml('<?xml version="1.0" encoding="UTF-8"?><Response><Say>Sorry, we hit a snag.</Say><Pause length="1"/><Redirect>/voice</Redirect></Response>')
-
-def menu_twiml():
-    prompt = "Welcome to Autonomy Receptionist. You can say things like, what are your hours, pricing, or location."
-    hints = "hours, pricing, location, operator, human, speak to a person, address, leave a message, voicemail, connect me"
-    return f'<?xml version="1.0" encoding="UTF-8"?><Response><Gather input="speech" action="/voice/route" method="POST" language="en-US" hints="{hints}" timeout="6" speechTimeout="auto"><Say>{prompt}</Say></Gather><Say>No input received.</Say><Redirect>/voice</Redirect></Response>'
-
-@app.route("/voice", methods=["POST","GET"])
-def voice(): return _xml(menu_twiml())
 def hours_sentence(_h=None):
     return "Monday through Friday 9 AM to 5 PM, closed Saturday and Sunday"
 
