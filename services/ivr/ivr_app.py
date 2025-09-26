@@ -190,7 +190,7 @@ def sms_consent():
     include = (request.args.get("include") or "hours").lower()
     body = request.args.get("body") or ""
 
-    said_yes = (digit == "1") or any(k in speech for k in ["yes","yeah","yep","sure","please","ok","okay","text me","send it"])
+    said_yes = any(k in speech for k in ["yes","yeah","yep","sure","please","ok","okay","text me","send it"])
     if said_yes and body:
         # Send SMS to caller (Twilio uses the current call's From by default if no "to" attribute is set)
         return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
