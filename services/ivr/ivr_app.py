@@ -204,7 +204,14 @@ def screen():
 def transfer_result():
     global LAST_TRANSFER
     global LAST_TRANSFER
+    global LAST_TRANSFER
     status = (request.values.get("DialCallStatus") or "").lower()
+    LAST_TRANSFER = {
+        "status": status,
+        "dial_sid": (request.values.get("DialCallSid") or ""),
+        "to": (request.values.get("To") or ""),
+        "from": (request.values.get("From") or "")
+    }
     LAST_TRANSFER = {
         "status": status,
         "dial_sid": (request.values.get("DialCallSid") or ""),
