@@ -270,3 +270,18 @@ def voice_route():
   <Say>Sorry, I didn't catch that.</Say>
   <Redirect>/voice</Redirect>
 </Response>""")
+
+# --- Override: voice-only main menu (no keypad text) ---
+def menu_twiml():
+    prompt = ("Welcome to Autonomy Receptionist. "
+              "You can say things like, what are your hours, pricing, or location.")
+    hints = "hours, pricing, location, operator, human, speak to a person, address, leave a message, voicemail, connect me"
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Gather input="speech" action="/voice/route" method="POST"
+          language="en-US" hints="{hints}" timeout="6" speechTimeout="auto">
+    <Say>{prompt}</Say>
+  </Gather>
+  <Say>No input received.</Say>
+  <Redirect>/voice</Redirect>
+</Response>"""
