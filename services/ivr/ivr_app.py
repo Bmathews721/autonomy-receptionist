@@ -37,7 +37,7 @@ def voice():
     brief = hours_sentence(load_hours())
     twiml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Gather input="dtmf" numDigits="1" action="/voice/menu" method="POST" timeout="6">
+  <Gather input="dtmf" numDigits="1" action="https://autonomy-ivr.onrender.com/voice/menu" method="POST" timeout="6">
     <Say>Welcome to Autonomy Receptionist. Press 1 to hear our business hours.</Say>
   </Gather>
   <Say>No input received. {brief}</Say>
@@ -54,3 +54,9 @@ def voice_menu():
 if __name__ == "__main__":
     port = int(os.getenv("PORT","10000"))
     app.run(host="0.0.0.0", port=port)
+
+# --- Absolute URL builder for Twilio callbacks ---
+from urllib.parse import urljoin
+def _abs_url(path):
+    base = os.getenv("PUBLIC_BASE_URL") or (request.url_root if request else "")
+    return urljoin(base, path.lstrip("/"))
