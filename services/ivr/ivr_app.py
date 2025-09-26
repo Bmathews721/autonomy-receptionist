@@ -75,7 +75,7 @@ def menu_twiml():
 <Response>
   <Gather input="speech" action="/voice/route" method="POST"
           language="en-US" hints="{hints}" timeout="6" speechTimeout="auto">
-    <Say>{prompt}</Say>
+    <Say>Welcome to Autonomy Receptionist. You can say things like, what are your hours, pricing, or location.</Say>
   </Gather>
   <Say>No input received.</Say>
   <Redirect>/voice</Redirect>
