@@ -1,0 +1,73 @@
+[PASTE THE ABOVE CONTENT]
+
+# --- Admin test route for hours ---
+from flask import request
+from twilio.twiml.voice_response import VoiceResponse
+
+@app.route("/admin/say-hours", methods=["GET"])
+def admin_say_hours():
+    called = request.args.get("called", "+18579579141")
+    info = get_client_info(called)
+    hours = (info or {}).get("business_hours")
+    vr = VoiceResponse()
+    if hours:
+        speak(vr, f"Our business hours are {hours}.", info)
+    else:
+        speak(vr, "Sorry, I don’t have our business hours on file.", info)
+    return str(vr)
+
+# --- Admin debug route: inspect client_info & keys ---
+from flask import request, jsonify
+
+@app.route("/admin/debug-client", methods=["GET"])
+def admin_debug_client():
+    called = request.args.get("called", "+18579579141")
+    info = get_client_info(called)
+    # Try to list all keys present in clients.json (helps diagnose key mismatch)
+    keys = []
+    try:
+        # Prefer importing the real loader from your module if available
+        try:
+            from services.ivr.ivr_app import load_clients_map as _load_clients_map  # type: ignore
+        except Exception:
+            _load_clients_map = None
+        if _load_clients_map:
+            cmap = _load_clients_map() or {}
+            keys = list(cmap.keys())
+    except Exception as e:
+        print("admin/debug-client: failed to load clients map:", e)
+
+    return jsonify({
+        "called": called,
+        "resolved_last10": (called[-10:] if called else None),
+        "client_info": info,
+        "available_keys": keys
+    })
+
+# --- Admin debug route: inspect client_info & keys ---
+from flask import request, jsonify
+
+@app.route("/admin/debug-client", methods=["GET"])
+def admin_debug_client():
+    called = request.args.get("called", "+18579579141")
+    info = get_client_info(called)
+    # Try to list all keys present in clients.json (helps diagnose key mismatch)
+    keys = []
+    try:
+        # Prefer importing the real loader from your module if available
+        try:
+            from services.ivr.ivr_app import load_clients_map as _load_clients_map  # type: ignore
+        except Exception:
+            _load_clients_map = None
+        if _load_clients_map:
+            cmap = _load_clients_map() or {}
+            keys = list(cmap.keys())
+    except Exception as e:
+        print("admin/debug-client: failed to load clients map:", e)
+
+    return jsonify({
+        "called": called,
+        "resolved_last10": (called[-10:] if called else None),
+        "client_info": info,
+        "available_keys": keys
+    })
