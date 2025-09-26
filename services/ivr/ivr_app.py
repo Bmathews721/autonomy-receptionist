@@ -1,3 +1,4 @@
+print("=== IMPORTED services/ivr/ivr_app.py ===")
 
 import os, requests, datetime, json
 from flask import Flask, request, Response
@@ -36,6 +37,30 @@ def speak(vr, text: str, client_info: dict):
     if lang: kwargs["language"] = lang
     if voice: kwargs["voice"] = voice
     vr.say(text, **kwargs)
+
+# --- helper: detect hours requests ---
+def maybe_hours_reply(text, client_info):
+    t = (text or "").lower()
+    h = (client_info or {}).get("business_hours")
+    if h and any(w in t for w in ("hours","open","close")):
+        return f"Our business hours are {h}."
+    return None
+
+# --- helper: detect hours requests ---
+def maybe_hours_reply(text, client_info):
+    t = (text or "").lower()
+    h = (client_info or {}).get("business_hours")
+    if h and any(w in t for w in ("hours","open","close")):
+        return f"Our business hours are {h}."
+    return None
+
+# --- helper: detect hours requests ---
+def maybe_hours_reply(text, client_info):
+    t = (text or "").lower()
+    h = (client_info or {}).get("business_hours")
+    if h and any(w in t for w in ("hours","open","close")):
+        return f"Our business hours are {h}."
+    return None
 
 def compute_lead_score(transcript: str, intent: str, client_info: dict):
     cfg = (client_info or {}).get("lead_scoring") or {}
@@ -303,3 +328,42 @@ def admin_say_hours():
     else:
         speak(vr, "Sorry, I don’t have our business hours on file.", info)
     return str(vr)
+
+# --- Admin routes for debugging ---
+from flask import request, jsonify
+from twilio.twiml.voice_response import VoiceResponse
+
+@app.route("/admin/shim-ok", methods=["GET"])
+def shim_ok():
+    rules = sorted([r.rule for r in app.url_map.iter_rules()])
+    return jsonify({"ok": True, "source": "services/ivr/ivr_app.py", "routes": rules})
+
+@app.route("/admin/say-hours", methods=["GET"])
+def admin_say_hours():
+    called = request.args.get("called", "+18579579141")
+    info = get_client_info(called)
+    hours = (info or {}).get("business_hours")
+    vr = VoiceResponse()
+    if hours:
+        speak(vr, f"Our business hours are {hours}.", info)
+    else:
+        speak(vr, "Sorry, I don’t have our business hours on file.", info)
+    return str(vr)
+
+@app.route("/admin/debug-client", methods=["GET"])
+def admin_debug_client():
+    called = request.args.get("called", "+18579579141")
+    info = get_client_info(called)
+    keys = []
+    try:
+        from services.ivr.ivr_app import load_clients_map as _load_clients_map  # self-import ok
+        cmap = _load_clients_map() or {}
+        keys = list(cmap.keys())
+    except Exception as e:
+        print("admin/debug-client: failed to load clients map:", e)
+    return jsonify({
+        "called": called,
+        "resolved_last10": (called[-10:] if called else None),
+        "client_info": info,
+        "available_keys": keys
+    })
