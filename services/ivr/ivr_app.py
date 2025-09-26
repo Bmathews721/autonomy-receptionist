@@ -147,7 +147,7 @@ def screen():
 </Response>""")
 
 # --- SMS helper screens: offer to text the info and send it on consent ---
-from urllib.parse import quote, unquote
+from urllib.parse import quote, unquote, unquote
 
 def _hours_text():
     h = load_hours()
