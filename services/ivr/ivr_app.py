@@ -175,7 +175,7 @@ def voice_route():
 <Response>
   <Say>Connecting you now.</Say>
   <Dial timeout="25" answerOnBridge="true"{_caller_attr()} action="/voice/transfer-result" method="POST">
-    <Number url="/voice/screen">{num}</Number>
+    <Number>{num}</Number>
   </Dial>
   <Say>No one could be reached.</Say>
   <Pause length="1"/><Say>Would you like to leave a message?</Say>
@@ -336,3 +336,26 @@ LAST_TRANSFER = {}
 @app.get("/admin/last-transfer")
 def admin_last_transfer():
     return jsonify(LAST_TRANSFER or {"info":"none yet"}), 200
+from urllib.parse import quote as _q
+
+def _normalize_e164(n):
+    import re
+    d = re.sub(r'\D+','', n or '')
+    if not d: return ''
+    if d.startswith('1') and len(d)==11: return '+'+d
+    if len(d)==10: return '+1'+d
+    return '+'+d
+
+@app.route("/voice/test-call", methods=["GET","POST"])
+def test_call():
+    num = _normalize_e164(request.args.get("to") or get_forward_number())
+    if not num:
+        return _xml('<?xml version="1.0" encoding="UTF-8"?><Response><Say>No forward number is configured.</Say></Response>')
+    return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Placing a test transfer.</Say>
+  <Dial timeout="25" answerOnBridge="true"{_caller_attr()} action="/voice/transfer-result" method="POST">
+    <Number>{num}</Number>
+  </Dial>
+  <Say>We could not complete the test transfer.</Say>
+</Response>''')
