@@ -1,6 +1,8 @@
 from flask import Flask, request, Response, jsonify
 import os, json, re, traceback, sys
 from urllib.parse import quote, unquote
+from datetime import datetime, time as dtime
+from zoneinfo import ZoneInfo
 
 app = Flask(__name__)
 def _xml(s): return Response(s, status=200, mimetype="text/xml")
@@ -56,7 +58,7 @@ def menu_twiml():
 </Response>'''
 @app.route("/voice", methods=["POST","GET"])
 def voice():
-    return _xml(menu_twiml())
+    return _xml(smart_menu_twiml())
 def _hours_text():
     h = load_hours()
     return "Autonomy Receptionist — Hours: Mon %s; Tue %s; Wed %s; Thu %s; Fri %s; Sat %s; Sun %s" % (
@@ -359,3 +361,46 @@ def test_call():
   </Dial>
   <Say>We could not complete the test transfer.</Say>
 </Response>''')
+
+# --- Hours parsing & open/closed check ---
+def _parse_range(s):
+    s = (s or "").strip().lower()
+    if s in ("closed","", "closed.", "close"): return None
+    # e.g., "9:00AM-5:00PM"
+    import re, datetime as _dt
+    m = re.match(r'\s*(\d{1,2}:\d{2}\s*[ap]m)\s*-\s*(\d{1,2}:\d{2}\s*[ap]m)\s*', s, re.I)
+    if not m: return None
+    def _hm(t):
+        t = t.replace(" ", "")
+        return _dt.datetime.strptime(t, "%I:%M%p").time()
+    return (_hm(m.group(1)), _hm(m.group(2)))
+
+def _is_open_now():
+    h = load_hours()
+    tz = ZoneInfo(h.get("timezone","America/New_York"))
+    now = datetime.now(tz)
+    day = ["mon","tue","wed","thu","fri","sat","sun"][now.weekday()]
+    rng = _parse_range(h.get(day))
+    # Demo override
+    if (os.getenv("DEMO_CLOSED","0").lower() in ("1","true","yes")): return False
+    if not rng: return False
+    start, end = rng
+    tnow = now.time()
+    return (start <= tnow <= end)
+
+def smart_menu_twiml():
+    if _is_open_now():
+        return menu_twiml()
+    # closed: speak concise hours, offer text, then voicemail
+    return f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>We’re currently closed. {hours_sentence(None)}.</Say>
+  <Pause length="1"/>
+  <Gather input="speech" action="/voice/sms-consent2?include=hours" method="POST"
+          language="en-US" timeout="6" speechTimeout="auto">
+    <Say>Would you like our hours sent by text? Say yes to receive a text, or say no to skip.</Say>
+  </Gather>
+  <Say>No input received.</Say>
+  <Say>You can also leave a short message after the tone.</Say>
+  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done" method="POST"/>
+</Response>'''
