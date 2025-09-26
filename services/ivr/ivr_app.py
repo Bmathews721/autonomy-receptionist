@@ -147,7 +147,7 @@ def screen():
 </Response>""")
 
 # --- SMS helper screens: offer to text the info and send it on consent ---
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 
 def _hours_text():
     h = load_hours()
@@ -188,7 +188,7 @@ def sms_offer():
 def sms_consent():
     speech = (request.values.get("SpeechResult") or "").lower().strip()
     include = (request.args.get("include") or "hours").lower()
-    body = request.args.get("body") or ""
+    body = unquote(request.args.get("body") or "")
 
     said_yes = any(k in speech for k in ["yes","yeah","yep","sure","please","ok","okay","text me","send it"])
     if said_yes and body:
