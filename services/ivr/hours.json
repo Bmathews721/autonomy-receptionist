@@ -1,1 +1,10 @@
-{"timezone":"America/New_York","mon":"9:00-17:00","tue":"9:00-17:00","wed":"9:00-17:00","thu":"9:00-17:00","fri":"9:00-17:00","sat":"closed","sun":"closed"}
+{
+  "timezone": "America/New_York",
+  "mon": "9:00AM-5:00PM",
+  "tue": "9:00AM-5:00PM",
+  "wed": "9:00AM-5:00PM",
+  "thu": "9:00AM-5:00PM",
+  "fri": "9:00AM-4:30PM",
+  "sat": "Closed",
+  "sun": "Closed"
+}
