@@ -121,6 +121,30 @@ def voice_route():
   <Pause length="1"/>
   <Redirect>/voice</Redirect>
 </Response>''')
+    if intent == "sms_hours":
+        return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Sms>{_hours_text()}</Sms>
+  <Say>Sent. Anything else?</Say>
+  <Redirect>/voice</Redirect>
+</Response>""")
+
+    if intent == "sms_pricing":
+        return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Sms>{_pricing_text()}</Sms>
+  <Say>Sent. Anything else?</Say>
+  <Redirect>/voice</Redirect>
+</Response>""")
+
+    if intent == "sms_location":
+        return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Sms>{_location_text()}</Sms>
+  <Say>Sent. Anything else?</Say>
+  <Redirect>/voice</Redirect>
+</Response>""")
+
     if intent == "voicemail":
         return _xml('''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -193,3 +217,23 @@ def voicemail_done():
 if __name__ == "__main__":
     port = int(os.getenv("PORT","10000"))
     app.run(host="0.0.0.0", port=port)
+
+# --- Override: support "text me …" direct SMS intents ---
+def route_intent(text):
+    t = (text or "").lower().strip()
+    if any(p in t for p in ["text me", "send me a text", "sms", "text", "message me", "send it to me"]):
+        if any(k in t for k in ["price","pricing","cost","plan","subscription"]): return "sms_pricing"
+        if any(k in t for k in ["location","address","where","directions"]):       return "sms_location"
+        return "sms_hours"
+    if any(k in t for k in ["hour","open","close","closing","time","business hours"]): return "hours"
+    if any(k in t for k in ["price","pricing","cost","plan","subscription"]):          return "pricing"
+    if any(k in t for k in ["location","address","where","directions"]):               return "location"
+    if any(k in t for k in ["leave a message","voicemail","voice mail","record a message"]): return "voicemail"
+    if any(k in t for k in [
+        "operator","human","agent","representative","someone","real person","live person",
+        "talk to a human","talk to someone","speak to a human","speak to someone",
+        "patch me through","transfer me","connect me","customer service","support",
+        "talk to a person","put me through","get me a human"
+    ]): return "operator"
+    if any(k in t for k in ["repeat","again","menu","options"]): return "repeat"
+    return "unknown"
