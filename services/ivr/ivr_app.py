@@ -177,7 +177,7 @@ def voice_route():
 <Response>
   <Say>Connecting you now.</Say>
   {_record_say()}
-  <Dial timeout="25" answerOnBridge="true"{_record_attrs()}{_caller_attr()} action="/voice/transfer-result" method="POST">
+  <Dial timeout="45" answerOnBridge="true"{_caller_attr()} action="https://autonomy-ivr.onrender.com/voice/transfer-result" method="POST" statusCallback="https://autonomy-ivr.onrender.com/voice/transfer-status" statusCallbackEvent="initiated ringing answered completed">
     <Number>{num}</Number>
   </Dial>
   <Say>No one could be reached.</Say>
@@ -490,3 +490,14 @@ def voicemail_done2():
   <Pause length="1"/><Say>Would you like anything else?</Say>
   <Redirect>/voice</Redirect>
 </Response>''')
+@app.route("/voice/transfer-status", methods=["POST","GET"])
+def transfer_status():
+    global LAST_TRANSFER
+    LAST_TRANSFER = {
+        "event": (request.values.get("CallStatus") or request.values.get("DialCallStatus") or ""),
+        "to": (request.values.get("To") or ""),
+        "from": (request.values.get("From") or ""),
+        "dial_sid": (request.values.get("DialCallSid") or ""),
+        "call_sid": (request.values.get("CallSid") or "")
+    }
+    return ("", 204)
