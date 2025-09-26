@@ -105,21 +105,21 @@ def voice_route():
 <Response>
   <Say>Our hours are Monday through Friday, nine A M to five P M. We are closed Saturday and Sunday.</Say>
   <Pause length="1"/>
-  <Redirect>/voice/sms-offer?include=hours</Redirect>
+  <Redirect>/voice</Redirect>
 </Response>''')
     if intent == "pricing":
         return _xml('''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>Our plans start at two hundred dollars per month, with a three hundred dollar option for added features.</Say>
   <Pause length="1"/>
-  <Redirect>/voice/sms-offer?include=pricing</Redirect>
+  <Redirect>/voice</Redirect>
 </Response>''')
     if intent == "location":
         return _xml('''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>We operate virtually, so we can help you from anywhere.</Say>
   <Pause length="1"/>
-  <Redirect>/voice/sms-offer?include=location</Redirect>
+  <Redirect>/voice</Redirect>
 </Response>''')
     if intent == "voicemail":
         return _xml('''<?xml version="1.0" encoding="UTF-8"?>
