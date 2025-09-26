@@ -105,7 +105,7 @@ def voice_route():
 <Response>
   <Say>Our hours are Monday through Friday, nine A M to five P M. We are closed Saturday and Sunday.</Say>
   <Pause length="1"/>
-  <Redirect>/voice</Redirect>
+  <Redirect>https://autonomy-ivr.onrender.com/voice/sms-offer?include=hours</Redirect>
 </Response>''')
     if intent == "pricing":
         return _xml('''<?xml version="1.0" encoding="UTF-8"?>
