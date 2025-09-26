@@ -29,6 +29,25 @@ def route_intent(text):
     if any(k in t for k in ["repeat","again"]): return "repeat"
     return "unknown"
 
+def get_forward_number():
+    """Return E.164 +NNNN… from FORWARD_NUMBER env; accept raw digits like 7815551234."""
+    num = (os.getenv("FORWARD_NUMBER") or "").strip()
+    if not num:
+        return ""
+    digits = re.sub(r"\D+", "", num)
+    if not digits:
+        return ""
+    # If already starts w/ country code (e.g., 1 for US), keep it; else assume US
+    if digits.startswith("1") and len(digits) == 11:
+        return f"+{digits}"
+    if not digits.startswith("1") and len(digits) == 10:
+        return f"+1{digits}"
+    # If user pasted full +… keep it
+    if num.startswith("+"):
+        return num
+    # Fallback: try as-is with +
+    return f"+{digits}"
+
 @app.route("/", methods=["GET","POST"])
 def root(): return "Autonomy IVR up", 200
 
@@ -65,68 +84,27 @@ def menu_twiml():
 @app.route("/voice", methods=["POST","GET"])
 def voice():
     return _xml(menu_twiml())
-@app.route("/voice/route", methods=["POST","GET"])
-def voice_route():
-    digit = (request.values.get("Digits") or "").strip()
-    speech = (request.values.get("SpeechResult") or "").strip()
-    intent = {"1":"hours","2":"pricing","3":"location","0":"operator"}.get(digit) if digit else route_intent(speech)
 
-    if intent == "hours":
-        brief = hours_sentence(load_hours())
-        return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say>Our hours are: {brief}.</Say>
-  <Pause length="1"/>
-  <Say>Would you like anything else?</Say>
+@app.route("/voice/transfer-result", methods=["POST","GET"])
+def transfer_result():
+    status = (request.values.get("DialCallStatus") or "").lower()
+    if status in ("completed","answered"):
+        return _xml("""<?xml version="1.0" encoding="UTF-8"?><Response>
+  <Say>Thanks for speaking with us.</Say>
+  <Pause length="1"/><Say>Anything else?</Say>
   <Redirect>/voice</Redirect>
 </Response>""")
-
-    if intent == "pricing":
-        return _xml("""<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say>Our plans start at two hundred dollars per month, with a three hundred dollar option for added features.</Say>
-  <Pause length="1"/>
-  <Say>Would you like anything else?</Say>
-  <Redirect>/voice</Redirect>
-</Response>""")
-
-    if intent == "location":
-        return _xml("""<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say>We operate virtually, so we can help you from anywhere.</Say>
-  <Pause length="1"/>
-  <Say>Would you like anything else?</Say>
-  <Redirect>/voice</Redirect>
-</Response>""")
-
-    if intent == "operator":
-        # Demo voicemail flow (replace with <Dial>+15551234567</Dial> for live forward)
-        return _xml("""<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say>Okay, please leave a short message after the tone. When you're done, you can simply hang up.</Say>
-  <Record maxLength="60" playBeep="true" action="/voice/voicemail-done" method="POST"/>
-</Response>""")
-
-    if intent == "repeat":
-        return _xml(menu_twiml())
-
-    # Unknown → reprompt then back to menu
-    return _xml("""<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say>Sorry, I didn't catch that.</Say>
-  <Redirect>/voice</Redirect>
+    else:
+        return _xml("""<?xml version="1.0" encoding="UTF-8"?><Response>
+  <Say>Sorry, we couldn't complete the transfer.</Say>
+  <Pause length="1"/><Say>Please leave a short message after the tone.</Say>
+  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done" method="POST"/>
 </Response>""")
 
 @app.route("/voice/voicemail-done", methods=["POST","GET"])
 def voicemail_done():
-    return _xml("""<?xml version="1.0" encoding="UTF-8"?>
-<Response>
+    return _xml("""<?xml version="1.0" encoding="UTF-8"?><Response>
   <Say>Thanks, we received your message.</Say>
-  <Pause length="1"/>
-  <Say>Anything else?</Say>
+  <Pause length="1"/><Say>Would you like anything else?</Say>
   <Redirect>/voice</Redirect>
 </Response>""")
-
-if __name__ == "__main__":
-    port = int(os.getenv("PORT","10000"))
-    app.run(host="0.0.0.0", port=port)
