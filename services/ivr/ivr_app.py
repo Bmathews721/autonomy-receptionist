@@ -352,7 +352,6 @@ def voice_route():
 "PY"
 
 # 3) Make SMS consent robust if body is missing (never error)
-sed -i 's/body = unquote(request.args.get("body") or "")/body = unquote(request.args.get("body") or "Autonomy Receptionist")/' services/ivr/ivr_app.py || true
 
 git add services/ivr/ivr_app.py
 git commit -m "Hours: fixed spoken phrasing; robust /voice/route + sms-consent fallback" || true
@@ -361,3 +360,25 @@ git push || true
 # --- Override: speak hours in a concise, demo-friendly way ---
 def hours_sentence(_h):
     return "Monday through Friday 9 AM to 5 PM, closed Saturday and Sunday"
+
+# --- Clean override: SMS consent (speech-only) ---
+from urllib.parse import unquote as _unquote
+
+@app.route("/voice/sms-consent", methods=["POST","GET"])
+def sms_consent():
+    speech = (request.values.get("SpeechResult") or "").lower().strip()
+    include = (request.args.get("include") or "hours").lower()
+    body = _unquote(request.args.get("body") or "Autonomy Receptionist")
+    said_yes = any(k in speech for k in ["yes","yeah","yep","sure","please","ok","okay","text me","send it"])
+    if said_yes and body:
+        return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Sms>{body}</Sms>
+  <Say>Sent. Anything else?</Say>
+  <Redirect>/voice</Redirect>
+</Response>""")
+    return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>No problem. Anything else?</Say>
+  <Redirect>/voice</Redirect>
+</Response>""")
