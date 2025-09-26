@@ -72,7 +72,7 @@ def sms_offer():
     enc = quote(body)
     return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Gather input="speech" action="/voice/sms-consent?include={include}&body={enc}" method="POST"
+  <Gather input="speech" action="/voice/sms-consent2?include={include}&body={enc}" method="POST"
           language="en-US" timeout="6" speechTimeout="auto">
     <Say>Would you like that sent by text? Say yes to receive a text, or say no to skip.</Say>
   </Gather>
@@ -241,3 +241,42 @@ def route_intent(text):
 def debug_intent():
     speech = (request.values.get("SpeechResult") or request.args.get("q","")).strip()
     return jsonify({"speech": speech, "intent": route_intent(speech)}), 200
+
+# --- SMS feature flags ---
+def _sms_allowed():
+    return os.getenv("SMS_ENABLED","0").lower() in ("1","true","yes")
+
+def _sms_from_attr():
+    svc = (os.getenv("SMS_SERVICE_SID") or "").strip()
+    if svc: return f' messagingServiceSid="{svc}"'
+    frm = (os.getenv("SMS_FROM") or "").strip()
+    if frm: return f' from="{frm}"'
+    return ""
+
+@app.route("/voice/sms-consent2", methods=["POST","GET"])
+def sms_consent2():
+    speech = (request.values.get("SpeechResult") or "").lower().strip()
+    body = unquote(request.args.get("body") or "Autonomy Receptionist")
+    said_yes = any(k in speech for k in ["yes","yeah","yep","sure","please","ok","okay","text me","send it"])
+
+    if said_yes and _sms_allowed():
+        attr = _sms_from_attr()
+        return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Sms{attr}>{body}</Sms>
+  <Say>Sent. Anything else?</Say>
+  <Redirect>/voice</Redirect>
+</Response>''')
+
+    if said_yes:
+        return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>We’re voice-only right now, so I’ll skip the text.</Say>
+  <Redirect>/voice</Redirect>
+</Response>''')
+
+    return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>No problem. Anything else?</Say>
+  <Redirect>/voice</Redirect>
+</Response>''')
