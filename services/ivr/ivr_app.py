@@ -347,6 +347,8 @@ def _send_email_sg(subject: str, text: str) -> bool:
     _persist_last_transfer(LAST_TRANSFER)
 except Exception:
     pass
+except Exception:
+    pass
         pass
     _persist_last_transfer(LAST_TRANSFER)
         req = urllib.request.Request(
