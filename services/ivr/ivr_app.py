@@ -11,14 +11,13 @@ def load_hours():
     if env:
         try:
             return json.loads(env)
-    except Exception:
-        pass
-        except Exception: pass
+        except Exception:
+            pass
     for p in ("services/ivr/hours.json","hours.json","config/hours.json"):
         if os.path.exists(p):
-            with open(p,"r",encoding="utf-8") as f: return json.load(f)
+            with open(p,"r",encoding="utf-8") as f:
+                return json.load(f)
     return {"timezone":"America/New_York","mon":"9:00AM-5:00PM","tue":"9:00AM-5:00PM","wed":"9:00AM-5:00PM","thu":"9:00AM-5:00PM","fri":"9:00AM-5:00PM","sat":"Closed","sun":"Closed"}
-def get_forward_number():
     num = (os.getenv("FORWARD_NUMBER") or "").strip()
     if not num: return ""
     if num.startswith("+"): return num
