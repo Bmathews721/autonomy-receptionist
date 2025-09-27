@@ -342,14 +342,10 @@ def _send_email_sg(subject: str, text: str) -> bool:
         "subject":subject,
         "content":[{"type":"text/plain","value":text}]
     }
-    try:
-        pass
-except Exception:
-    pass
-except Exception:
-    pass
-except Exception:
-    pass
+      try:
+          pass
+      except Exception:
+          pass
         pass
         req = urllib.request.Request(
             "https://api.sendgrid.com/v3/mail/send",
