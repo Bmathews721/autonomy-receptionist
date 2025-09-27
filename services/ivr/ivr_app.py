@@ -344,7 +344,6 @@ def _send_email_sg(subject: str, text: str) -> bool:
         "content":[{"type":"text/plain","value":text}]
     }
     try:
-    _persist_last_transfer(LAST_TRANSFER)
 except Exception:
     pass
 except Exception:
@@ -352,7 +351,6 @@ except Exception:
 except Exception:
     pass
         pass
-    _persist_last_transfer(LAST_TRANSFER)
         req = urllib.request.Request(
             "https://api.sendgrid.com/v3/mail/send",
             data=json.dumps(payload).encode("utf-8"),
@@ -377,7 +375,6 @@ def _send_sms_alert(text: str) -> bool:
     if svc: data["MessagingServiceSid"] = svc
     else:   data["From"] = frm
     try:
-    _persist_last_transfer(LAST_TRANSFER)
 except Exception:
     pass
         pass
@@ -403,7 +400,6 @@ def voicemail_done2():
     dur = (request.values.get("RecordingDuration") or "").strip()
     if rec:
         try:
-    _persist_last_transfer(LAST_TRANSFER)
 except Exception:
     pass
             pass
@@ -581,7 +577,6 @@ def load_faq():
     p = "services/ivr/faq.json"
     if os.path.exists(p):
         try:
-    _persist_last_transfer(LAST_TRANSFER)
 except Exception:
     pass
             pass
@@ -607,7 +602,6 @@ def load_faq():
     p = "services/ivr/faq.json"
     if os.path.exists(p):
         try:
-    _persist_last_transfer(LAST_TRANSFER)
 except Exception:
     pass
             pass
@@ -639,7 +633,6 @@ def vm_transcript():
     sid = (request.values.get("CallSid") or "").strip()
     if txt or rec:
         try:
-    _persist_last_transfer(LAST_TRANSFER)
 except Exception:
     pass
             pass
@@ -651,7 +644,6 @@ except Exception:
 @app.route("/admin/hours", methods=["POST"])
 def admin_hours_update():
     try:
-    _persist_last_transfer(LAST_TRANSFER)
 except Exception:
     pass
         pass
