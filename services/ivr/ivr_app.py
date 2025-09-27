@@ -349,6 +349,8 @@ except Exception:
     pass
 except Exception:
     pass
+except Exception:
+    pass
         pass
     _persist_last_transfer(LAST_TRANSFER)
         req = urllib.request.Request(
