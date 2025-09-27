@@ -343,7 +343,7 @@ def _send_email_sg(subject: str, text: str) -> bool:
         "content":[{"type":"text/plain","value":text}]
     }
     try:
-    pass
+        pass
 except Exception:
     pass
 except Exception:
@@ -375,7 +375,7 @@ def _send_sms_alert(text: str) -> bool:
     if svc: data["MessagingServiceSid"] = svc
     else:   data["From"] = frm
     try:
-    pass
+        pass
 except Exception:
     pass
         pass
@@ -401,7 +401,7 @@ def voicemail_done2():
     dur = (request.values.get("RecordingDuration") or "").strip()
     if rec:
         try:
-    pass
+            pass
 except Exception:
     pass
             pass
@@ -579,7 +579,7 @@ def load_faq():
     p = "services/ivr/faq.json"
     if os.path.exists(p):
         try:
-    pass
+            pass
 except Exception:
     pass
             pass
@@ -605,7 +605,7 @@ def load_faq():
     p = "services/ivr/faq.json"
     if os.path.exists(p):
         try:
-    pass
+            pass
 except Exception:
     pass
             pass
@@ -637,7 +637,7 @@ def vm_transcript():
     sid = (request.values.get("CallSid") or "").strip()
     if txt or rec:
         try:
-    pass
+            pass
 except Exception:
     pass
             pass
@@ -649,7 +649,7 @@ except Exception:
 @app.route("/admin/hours", methods=["POST"])
 def admin_hours_update():
     try:
-    pass
+        pass
 except Exception:
     pass
         pass
