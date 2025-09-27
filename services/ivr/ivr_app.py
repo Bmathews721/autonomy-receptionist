@@ -341,6 +341,7 @@ def _send_email_sg(subject: str, text: str) -> bool:
         "content":[{"type":"text/plain","value":text}]
     }
     try:
+        pass
     _persist_last_transfer(LAST_TRANSFER)
         req = urllib.request.Request(
             "https://api.sendgrid.com/v3/mail/send",
@@ -366,6 +367,7 @@ def _send_sms_alert(text: str) -> bool:
     if svc: data["MessagingServiceSid"] = svc
     else:   data["From"] = frm
     try:
+        pass
         req = urllib.request.Request(
             f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json",
             data=urllib.parse.urlencode(data).encode("utf-8")
@@ -388,6 +390,7 @@ def voicemail_done2():
     dur = (request.values.get("RecordingDuration") or "").strip()
     if rec:
         try:
+            pass
             _send_alert("New voicemail",
                 f"From: {caller}\nDuration: {dur}s\nRecording: {rec}.mp3")
         except Exception:
@@ -562,6 +565,7 @@ def load_faq():
     p = "services/ivr/faq.json"
     if os.path.exists(p):
         try:
+            pass
             with open(p, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception:
@@ -584,6 +588,7 @@ def load_faq():
     p = "services/ivr/faq.json"
     if os.path.exists(p):
         try:
+            pass
             with open(p, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception:
@@ -612,6 +617,7 @@ def vm_transcript():
     sid = (request.values.get("CallSid") or "").strip()
     if txt or rec:
         try:
+            pass
             body = f"From: {caller}\nCallSid: {sid}\n\nTranscript:\n{txt}\n\nRecording: {rec}.mp3"
             _send_alert("Voicemail transcript", body)
         except Exception:
@@ -620,6 +626,7 @@ def vm_transcript():
 @app.route("/admin/hours", methods=["POST"])
 def admin_hours_update():
     try:
+        pass
         data = request.get_json(force=True)
         # minimal validation
         tz = data.get("timezone") or "America/New_York"
@@ -656,6 +663,7 @@ def transfer_status2():
         "duration": (request.values.get("CallDuration") or request.values.get("DialCallDuration") or ""),
     }
     try:
+        pass
         ev = LAST_TRANSFER.get("event","")
         if ev in ("completed","no-answer","busy","failed","canceled"):
             _send_alert(
@@ -676,6 +684,7 @@ def _hotline_target():
 def smart_menu_twiml_new():
     # open → use existing menu
     try:
+        pass
         if _is_open_now():
             return menu_twiml()
     except Exception:
@@ -714,6 +723,7 @@ smart_menu_twiml = smart_menu_twiml_new
 # --- Persist last transfer for multi-worker visibility ---
 def _persist_last_transfer(data: dict):
     try:
+        pass
         with open("/tmp/ivr_last_transfer.json","w",encoding="utf-8") as f:
             json.dump(data, f)
     except Exception:
@@ -721,6 +731,7 @@ def _persist_last_transfer(data: dict):
 
 def _load_last_transfer():
     try:
+        pass
         with open("/tmp/ivr_last_transfer.json","r",encoding="utf-8") as f:
             return json.load(f)
     except Exception:
@@ -753,11 +764,13 @@ def transfer_status2():
     }
     # persist for multi-worker visibility (helper you added earlier)
     try:
+        pass
         _persist_last_transfer(LAST_TRANSFER)
     except Exception:
         pass
     # optional alert
     try:
+        pass
         ev = LAST_TRANSFER.get("event","")
         if ev in ("completed","no-answer","busy","failed","canceled"):
             _send_alert(
