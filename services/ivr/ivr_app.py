@@ -618,6 +618,14 @@ def vm_transcript():
     return ("", 204)
 @app.route("/voice/transfer-status", methods=["POST","GET"])
 def transfer_status():
+    def _nz(s):
+        import re
+        s = (s or "").strip()
+        d = re.sub(r"\D+","", s)
+        if not d: return s
+        if d.startswith("1") and len(d)==11: return "+"+d
+        if len(d)==10: return "+1"+d
+        return "+"+d
     global LAST_TRANSFER
     LAST_TRANSFER = {
         "event": (request.values.get("CallStatus") or request.values.get("DialCallStatus") or ""),
