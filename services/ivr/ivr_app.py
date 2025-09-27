@@ -145,7 +145,7 @@ def transfer_result():
 <Response>
   <Say>Sorry, we couldn't complete the transfer.</Say>
   <Pause length="1"/><Say>Please leave a short message after the tone.</Say>
-  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done2" method="POST"/>
+  <Record {_vm_attrs()} maxLength="90" playBeep="true"  action="https://autonomy-ivr.onrender.com/voice/voicemail-done2" method="POST"/>
 </Response>''')
 
 @app.route("/voice/voicemail-done", methods=["POST","GET"])
@@ -310,7 +310,7 @@ def smart_menu_twiml():
   </Gather>
   <Say>No input received.</Say>
   <Say>You can also leave a short message after the tone.</Say>
-  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done2" method="POST"/>
+  <Record {_vm_attrs()} maxLength="90" playBeep="true"  action="https://autonomy-ivr.onrender.com/voice/voicemail-done2" method="POST"/>
 </Response>'''
 
 # --- Call recording toggle ---
@@ -422,7 +422,7 @@ def trigger_operator():
   </Dial>
   <Say>No one could be reached.</Say>
   <Pause length="1"/><Say>Would you like to leave a message?</Say>
-  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done2" method="POST"/>
+  <Record {_vm_attrs()} maxLength="90" playBeep="true"  action="https://autonomy-ivr.onrender.com/voice/voicemail-done2" method="POST"/>
 </Response>''')
 CAPTURED = {}
 def _csid():
@@ -478,7 +478,7 @@ def capture_reason():
   </Dial>
   <Say>No one could be reached.</Say>
   <Pause length="1"/><Say>Would you like to leave a message?</Say>
-  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done2" method="POST"/>
+  <Record {_vm_attrs()} maxLength="90" playBeep="true"  action="https://autonomy-ivr.onrender.com/voice/voicemail-done2" method="POST"/>
 </Response>''')
 @app.route("/voice/route", methods=["POST","GET"])
 def voice_route():
@@ -539,7 +539,7 @@ def voice_route():
         return _xml("""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>Please leave a short message after the tone. When you are done, you can hang up.</Say>
-  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done2" method="POST"/>
+  <Record {_vm_attrs()} maxLength="90" playBeep="true"  action="https://autonomy-ivr.onrender.com/voice/voicemail-done2" method="POST"/>
 </Response>""")
 
     if intent == "operator":
@@ -607,3 +607,23 @@ def faq_answer(text):
         if any(k in t for k in kws):
             return item.get("answer") or ""
     return ""
+
+# --- Voicemail transcription toggle ---
+def _vm_attrs():
+    return ' transcribe="true" transcribeCallback="https://autonomy-ivr.onrender.com/voice/vm-transcript"' \
+        if os.getenv("VOICEMAIL_TRANSCRIBE","0").lower() in ("1","true","yes") else ""
+
+@app.route("/voice/vm-transcript", methods=["POST","GET"])
+def vm_transcript():
+    # Twilio sends TranscriptionText, RecordingUrl, From, CallSid, etc.
+    txt = (request.values.get("TranscriptionText") or "").strip()
+    rec = (request.values.get("RecordingUrl") or "").strip()
+    caller = (request.values.get("From") or "").strip()
+    sid = (request.values.get("CallSid") or "").strip()
+    if txt or rec:
+        try:
+            body = f"From: {caller}\nCallSid: {sid}\n\nTranscript:\n{txt}\n\nRecording: {rec}.mp3"
+            _send_alert("Voicemail transcript", body)
+        except Exception:
+            pass
+    return ("", 204)
