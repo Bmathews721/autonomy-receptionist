@@ -784,3 +784,9 @@ def transfer_status2():
     except Exception:
         pass
     return ("", 204)
+@app.get("/admin/last-transfer3")
+def admin_last_transfer3():
+    d = globals().get("LAST_TRANSFER", {}) or {}
+    if d:
+        return jsonify(d), 200
+    return jsonify(_load_last_transfer() or {"info":"none yet"}), 200
