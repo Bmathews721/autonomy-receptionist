@@ -98,91 +98,6 @@ def sms_consent():
   <Say>No problem. Anything else?</Say>
   <Redirect>/voice</Redirect>
 </Response>''')
-@app.route("/voice/route", methods=["POST","GET"])
-def voice_route():
-    speech = (request.values.get("SpeechResult") or "").strip()
-    intent = route_intent(speech)
-    if intent == "hours":
-        return _xml('''<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say>Our hours are Monday through Friday, nine A M to five P M. We are closed Saturday and Sunday.</Say>
-  <Pause length="1"/>
-  <Gather input="speech" action="/voice/sms-consent2?include=hours" method="POST" language="en-US" timeout="6" speechTimeout="auto">
-    <Say>Would you like that sent by text? Say yes to receive a text, or say no to skip.</Say>
-  </Gather>
-  <Say>No input received.</Say>
-  <Redirect>/voice</Redirect>
-</Response>''')
-    if intent == "pricing":
-        return _xml('''<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say>Our plans start at two hundred dollars per month, with a three hundred dollar option for added features.</Say>
-  <Pause length="1"/>
-  <Gather input="speech" action="/voice/sms-consent2?include=pricing" method="POST" language="en-US" timeout="6" speechTimeout="auto">
-    <Say>Would you like that sent by text? Say yes to receive a text, or say no to skip.</Say>
-  </Gather>
-  <Say>No input received.</Say>
-  <Redirect>/voice</Redirect>
-</Response>''')
-    if intent == "location":
-        return _xml('''<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say>We operate virtually, so we can help you from anywhere.</Say>
-  <Pause length="1"/>
-  <Gather input="speech" action="/voice/sms-consent2?include=location" method="POST" language="en-US" timeout="6" speechTimeout="auto">
-    <Say>Would you like that sent by text? Say yes to receive a text, or say no to skip.</Say>
-  </Gather>
-  <Say>No input received.</Say>
-  <Redirect>/voice</Redirect>
-</Response>''')
-    if intent == "sms_hours":
-        return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Sms>{_hours_text()}</Sms>
-  <Say>Sent. Anything else?</Say>
-  <Redirect>/voice</Redirect>
-</Response>""")
-
-    if intent == "sms_pricing":
-        return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Sms>{_pricing_text()}</Sms>
-  <Say>Sent. Anything else?</Say>
-  <Redirect>/voice</Redirect>
-</Response>""")
-
-    if intent == "sms_location":
-        return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Sms>{_location_text()}</Sms>
-  <Say>Sent. Anything else?</Say>
-  <Redirect>/voice</Redirect>
-</Response>""")
-
-    if intent == "voicemail":
-        return _xml('''<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say>Please leave a short message after the tone. When you are done, you can hang up.</Say>
-  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done2" method="POST"/>
-</Response>''')
-    if intent == "operator":
-    return _xml("""<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Redirect>https://autonomy-ivr.onrender.com/voice/capture-start</Redirect>
-</Response>""")
-    return _xml("""<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Redirect>https://autonomy-ivr.onrender.com/voice/capture-start</Redirect>
-</Response>""")
-
-
-    if intent == "repeat":
-        return _xml(menu_twiml())
-    return _xml('''<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say>Sorry, I didn’t catch that.</Say>
-  <Redirect>/voice</Redirect>
-</Response>''')
 @app.route("/voice/screen", methods=["GET","POST"])
 def screen():
     d = (request.values.get("Digits") or "").strip()
@@ -565,3 +480,65 @@ def capture_reason():
   <Pause length="1"/><Say>Would you like to leave a message?</Say>
   <Record maxLength="90" playBeep="true" action="/voice/voicemail-done2" method="POST"/>
 </Response>''')
+@app.route("/voice/route", methods=["POST","GET"])
+def voice_route():
+    speech = (request.values.get("SpeechResult") or "").strip()
+    intent = route_intent(speech)
+
+    if intent == "hours":
+        return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Our hours are Monday through Friday, nine A M to five P M. We are closed Saturday and Sunday.</Say>
+  <Pause length="1"/>
+  <Gather input="speech" action="/voice/sms-consent2?include=hours" method="POST" language="en-US" timeout="6" speechTimeout="auto">
+    <Say>Would you like that sent by text? Say yes to receive a text, or say no to skip.</Say>
+  </Gather>
+  <Say>No input received.</Say>
+  <Redirect>/voice</Redirect>
+</Response>""")
+
+    if intent == "pricing":
+        return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Our plans start at two hundred dollars per month, with a three hundred dollar option for added features.</Say>
+  <Pause length="1"/>
+  <Gather input="speech" action="/voice/sms-consent2?include=pricing" method="POST" language="en-US" timeout="6" speechTimeout="auto">
+    <Say>Would you like that sent by text? Say yes to receive a text, or say no to skip.</Say>
+  </Gather>
+  <Say>No input received.</Say>
+  <Redirect>/voice</Redirect>
+</Response>""")
+
+    if intent == "location":
+        return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>We operate virtually, so we can help you from anywhere.</Say>
+  <Pause length="1"/>
+  <Gather input="speech" action="/voice/sms-consent2?include=location" method="POST" language="en-US" timeout="6" speechTimeout="auto">
+    <Say>Would you like that sent by text? Say yes to receive a text, or say no to skip.</Say>
+  </Gather>
+  <Say>No input received.</Say>
+  <Redirect>/voice</Redirect>
+</Response>""")
+
+    if intent == "voicemail":
+        return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Please leave a short message after the tone. When you are done, you can hang up.</Say>
+  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done2" method="POST"/>
+</Response>""")
+
+    if intent == "operator":
+        return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Redirect>https://autonomy-ivr.onrender.com/voice/capture-start</Redirect>
+</Response>""")
+
+    if intent == "repeat":
+        return _xml(menu_twiml())
+
+    return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Sorry, I didn’t catch that.</Say>
+  <Redirect>/voice</Redirect>
+</Response>""")
