@@ -93,7 +93,7 @@ def sms_consent():
   <Say>Sent. Anything else?</Say>
   <Redirect>/voice</Redirect>
 </Response>''')
-    return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+    return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>No problem. Anything else?</Say>
   <Redirect>/voice</Redirect>
@@ -102,7 +102,7 @@ def sms_consent():
 def screen():
     d = (request.values.get("Digits") or "").strip()
     if d == "1": return _xml('<?xml version="1.0" encoding="UTF-8"?><Response><Say>Connecting.</Say></Response>')
-    return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+    return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Gather numDigits="1" action="/voice/screen" method="POST" timeout="8">
     <Say>Autonomy demo call. Press 1 to accept.</Say>
@@ -135,22 +135,22 @@ def transfer_result():
         "from": (request.values.get("From") or "")
     }
     if status in ("completed","answered"):
-        return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+        return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>Thanks for speaking with us.</Say>
   <Pause length="1"/><Say>Anything else?</Say>
   <Redirect>/voice</Redirect>
 </Response>''')
-    return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+    return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>Sorry, we couldn't complete the transfer.</Say>
   <Pause length="1"/><Say>Please leave a short message after the tone.</Say>
-  <Record {_vm_attrs()} maxLength="90" playBeep="true"  action="https://autonomy-ivr.onrender.com/voice/voicemail-done2" method="POST"/>
+  <Record{_vm_attrs()} maxLength="90" playBeep="true"  action="https://autonomy-ivr.onrender.com/voice/voicemail-done2" method="POST"/>
 </Response>''')
 
 @app.route("/voice/voicemail-done", methods=["POST","GET"])
 def voicemail_done():
-    return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+    return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>Thanks, we received your message.</Say>
   <Pause length="1"/><Say>Would you like anything else?</Say>
@@ -212,13 +212,13 @@ def sms_consent2():
 </Response>''')
 
     if said_yes:
-        return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+        return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>We’re voice-only right now, so I’ll skip the text.</Say>
   <Redirect>/voice</Redirect>
 </Response>''')
 
-    return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+    return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>No problem. Anything else?</Say>
   <Redirect>/voice</Redirect>
@@ -310,7 +310,7 @@ def smart_menu_twiml():
   </Gather>
   <Say>No input received.</Say>
   <Say>You can also leave a short message after the tone.</Say>
-  <Record {_vm_attrs()} maxLength="90" playBeep="true"  action="https://autonomy-ivr.onrender.com/voice/voicemail-done2" method="POST"/>
+  <Record{_vm_attrs()} maxLength="90" playBeep="true"  action="https://autonomy-ivr.onrender.com/voice/voicemail-done2" method="POST"/>
 </Response>'''
 
 # --- Call recording toggle ---
@@ -391,7 +391,7 @@ def voicemail_done2():
                 f"From: {caller}\nDuration: {dur}s\nRecording: {rec}.mp3")
         except Exception:
             pass
-    return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+    return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>Thanks, we received your message.</Say>
   <Pause length="1"/><Say>Would you like anything else?</Say>
@@ -422,7 +422,7 @@ def trigger_operator():
   </Dial>
   <Say>No one could be reached.</Say>
   <Pause length="1"/><Say>Would you like to leave a message?</Say>
-  <Record {_vm_attrs()} maxLength="90" playBeep="true"  action="https://autonomy-ivr.onrender.com/voice/voicemail-done2" method="POST"/>
+  <Record{_vm_attrs()} maxLength="90" playBeep="true"  action="https://autonomy-ivr.onrender.com/voice/voicemail-done2" method="POST"/>
 </Response>''')
 CAPTURED = {}
 def _csid():
@@ -431,7 +431,7 @@ def _csid():
 def capture_start():
     cs = _csid()
     if cs: CAPTURED[cs] = {"name":"", "reason":""}
-    return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+    return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Gather input="speech" action="https://autonomy-ivr.onrender.com/voice/capture-name" method="POST"
           language="en-US" timeout="6" speechTimeout="auto">
@@ -448,7 +448,7 @@ def capture_name():
     if cs:
         rec = CAPTURED.setdefault(cs, {"name":"", "reason":""})
         if speech: rec["name"] = speech
-    return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+    return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Gather input="speech" action="https://autonomy-ivr.onrender.com/voice/capture-reason" method="POST"
           language="en-US" timeout="7" speechTimeout="auto">
@@ -478,7 +478,7 @@ def capture_reason():
   </Dial>
   <Say>No one could be reached.</Say>
   <Pause length="1"/><Say>Would you like to leave a message?</Say>
-  <Record {_vm_attrs()} maxLength="90" playBeep="true"  action="https://autonomy-ivr.onrender.com/voice/voicemail-done2" method="POST"/>
+  <Record{_vm_attrs()} maxLength="90" playBeep="true"  action="https://autonomy-ivr.onrender.com/voice/voicemail-done2" method="POST"/>
 </Response>''')
 @app.route("/voice/route", methods=["POST","GET"])
 def voice_route():
@@ -500,7 +500,7 @@ def voice_route():
 </Response>""")
 
     if intent == "hours":
-        return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+        return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>Our hours are Monday through Friday, nine A M to five P M. We are closed Saturday and Sunday.</Say>
   <Pause length="1"/>
@@ -512,7 +512,7 @@ def voice_route():
 </Response>""")
 
     if intent == "pricing":
-        return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+        return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>Our plans start at two hundred dollars per month, with a three hundred dollar option for added features.</Say>
   <Pause length="1"/>
@@ -524,7 +524,7 @@ def voice_route():
 </Response>""")
 
     if intent == "location":
-        return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+        return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>We operate virtually, so we can help you from anywhere.</Say>
   <Pause length="1"/>
@@ -536,14 +536,14 @@ def voice_route():
 </Response>""")
 
     if intent == "voicemail":
-        return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+        return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>Please leave a short message after the tone. When you are done, you can hang up.</Say>
-  <Record {_vm_attrs()} maxLength="90" playBeep="true"  action="https://autonomy-ivr.onrender.com/voice/voicemail-done2" method="POST"/>
+  <Record{_vm_attrs()} maxLength="90" playBeep="true"  action="https://autonomy-ivr.onrender.com/voice/voicemail-done2" method="POST"/>
 </Response>""")
 
     if intent == "operator":
-        return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+        return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Redirect>https://autonomy-ivr.onrender.com/voice/capture-start</Redirect>
 </Response>""")
@@ -551,7 +551,7 @@ def voice_route():
     if intent == "repeat":
         return _xml(menu_twiml())
 
-    return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+    return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>Sorry, I didn’t catch that.</Say>
   <Redirect>/voice</Redirect>
