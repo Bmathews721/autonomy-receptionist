@@ -166,7 +166,14 @@ def voice_route():
   <Record maxLength="90" playBeep="true" action="/voice/voicemail-done2" method="POST"/>
 </Response>''')
     if intent == "operator":
-        num = get_forward_number()
+    cs = _csid()
+    rec = CAPTURED.get(cs, {}) if cs else {}
+    if not rec.get("name") or not rec.get("reason"):
+        return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Redirect>https://autonomy-ivr.onrender.com/voice/capture-start</Redirect>
+</Response>""")
+    num = get_forward_number()
         if not num:
             return _xml('''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -512,6 +519,62 @@ def trigger_operator():
   <Dial timeout="45" answerOnBridge="true"{_caller_attr()} action="https://autonomy-ivr.onrender.com/voice/transfer-result" method="POST"
         statusCallback="https://autonomy-ivr.onrender.com/voice/transfer-status" statusCallbackEvent="initiated ringing answered completed">
     <Number>{num}</Number>
+  </Dial>
+  <Say>No one could be reached.</Say>
+  <Pause length="1"/><Say>Would you like to leave a message?</Say>
+  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done2" method="POST"/>
+</Response>''')
+CAPTURED = {}
+def _csid():
+    return (request.values.get("CallSid") or request.values.get("ParentCallSid") or "").strip()
+@app.route("/voice/capture-start", methods=["POST","GET"])
+def capture_start():
+    cs = _csid()
+    if cs: CAPTURED[cs] = {"name":"", "reason":""}
+    return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Gather input="speech" action="https://autonomy-ivr.onrender.com/voice/capture-name" method="POST"
+          language="en-US" timeout="6" speechTimeout="auto">
+    <Say>Sure. What name should I give our team?</Say>
+  </Gather>
+  <Say>No input received.</Say>
+  <Redirect>/voice</Redirect>
+</Response>''')
+
+@app.route("/voice/capture-name", methods=["POST","GET"])
+def capture_name():
+    cs = _csid()
+    speech = (request.values.get("SpeechResult") or "").strip()
+    if cs:
+        rec = CAPTURED.setdefault(cs, {"name":"", "reason":""})
+        if speech: rec["name"] = speech
+    return _xml('''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Gather input="speech" action="https://autonomy-ivr.onrender.com/voice/capture-reason" method="POST"
+          language="en-US" timeout="7" speechTimeout="auto">
+    <Say>Thanks. Briefly, what is this regarding?</Say>
+  </Gather>
+  <Say>No input received.</Say>
+  <Redirect>/voice</Redirect>
+</Response>''')
+
+@app.route("/voice/capture-reason", methods=["POST","GET"])
+def capture_reason():
+    cs = _csid()
+    speech = (request.values.get("SpeechResult") or "").strip()
+    name = ""
+    if cs:
+        rec = CAPTURED.setdefault(cs, {"name":"", "reason":""})
+        if speech: rec["reason"] = speech
+        name = rec.get("name","")
+    safe_name = name or "you"
+    reason = CAPTURED.get(cs,{}).get("reason","your request")
+    return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Thanks, {safe_name}. I\'ll connect you now about {reason}.</Say>
+  <Dial timeout="45" answerOnBridge="true"{_caller_attr()} action="https://autonomy-ivr.onrender.com/voice/transfer-result" method="POST"
+        statusCallback="https://autonomy-ivr.onrender.com/voice/transfer-status" statusCallbackEvent="initiated ringing answered completed">
+    <Number>{get_forward_number()}</Number>
   </Dial>
   <Say>No one could be reached.</Say>
   <Pause length="1"/><Say>Would you like to leave a message?</Say>
