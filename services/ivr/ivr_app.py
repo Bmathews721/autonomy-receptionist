@@ -341,6 +341,7 @@ def _send_email_sg(subject: str, text: str) -> bool:
         "content":[{"type":"text/plain","value":text}]
     }
     try:
+    _persist_last_transfer(LAST_TRANSFER)
         req = urllib.request.Request(
             "https://api.sendgrid.com/v3/mail/send",
             data=json.dumps(payload).encode("utf-8"),
@@ -752,3 +753,25 @@ def smart_menu_twiml_new():
 
 # swap-in: have /voice use the new function
 smart_menu_twiml = smart_menu_twiml_new
+
+# --- Persist last transfer for multi-worker visibility ---
+def _persist_last_transfer(data: dict):
+    try:
+        with open("/tmp/ivr_last_transfer.json","w",encoding="utf-8") as f:
+            json.dump(data, f)
+    except Exception:
+        pass
+
+def _load_last_transfer():
+    try:
+        with open("/tmp/ivr_last_transfer.json","r",encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+@app.get("/admin/last-transfer2")
+def admin_last_transfer2():
+    # prefer memory; fall back to file
+    if LAST_TRANSFER:
+        return jsonify(LAST_TRANSFER), 200
+    return jsonify(_load_last_transfer() or {"info":"none yet"}), 200
