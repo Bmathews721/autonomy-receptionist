@@ -406,7 +406,7 @@ def trigger_operator():
 <Response>
   <Say>Connecting you now.</Say>
   <Dial timeout="45" answerOnBridge="true"{_caller_attr()} action="https://autonomy-ivr.onrender.com/voice/transfer-result" method="POST"
-        statusCallback="https://autonomy-ivr.onrender.com/voice/transfer-status" statusCallbackEvent="initiated ringing answered completed">
+        statusCallback="https://autonomy-ivr.onrender.com/voice/transfer-status2" statusCallbackEvent="initiated ringing answered completed">
     <Number>{num}</Number>
   </Dial>
   <Say>No one could be reached.</Say>
@@ -462,7 +462,7 @@ def capture_reason():
 <Response>
   <Say>Thanks, {safe_name}. I\'ll connect you now about {reason}.</Say>
   <Dial timeout="45" answerOnBridge="true"{_caller_attr()} action="https://autonomy-ivr.onrender.com/voice/transfer-result" method="POST"
-        statusCallback="https://autonomy-ivr.onrender.com/voice/transfer-status" statusCallbackEvent="initiated ringing answered completed">
+        statusCallback="https://autonomy-ivr.onrender.com/voice/transfer-status2" statusCallbackEvent="initiated ringing answered completed">
     <Number>{get_forward_number()}</Number>
   </Dial>
   <Say>No one could be reached.</Say>
@@ -616,7 +616,7 @@ def vm_transcript():
         except Exception:
             pass
     return ("", 204)
-@app.route("/voice/transfer-status", methods=["POST","GET"])
+@app.route("/voice/transfer-status2", methods=["POST","GET"])
 def transfer_status():
     def _nz(s):
         import re
@@ -677,3 +677,78 @@ def admin_hours_update():
 def _hotline_target():
     return os.getenv("AFTER_HOURS_FORWARD","").strip()
 
+
+@app.route("/voice/transfer-status22", methods=["POST","GET"])
+def transfer_status2():
+    global LAST_TRANSFER
+    def _nz(s):
+        import re
+        s = (s or "").strip()
+        d = re.sub(r"\D+","", s)
+        if not d: return s
+        if d.startswith("1") and len(d)==11: return "+"+d
+        if len(d)==10: return "+1"+d
+        return "+"+d
+    LAST_TRANSFER = {
+        "event": (request.values.get("CallStatus") or request.values.get("DialCallStatus") or ""),
+        "to": _nz(request.values.get("To")),
+        "from": _nz(request.values.get("From")),
+        "dial_sid": (request.values.get("DialCallSid") or ""),
+        "call_sid": (request.values.get("CallSid") or ""),
+        "duration": (request.values.get("CallDuration") or request.values.get("DialCallDuration") or ""),
+    }
+    try:
+        ev = LAST_TRANSFER.get("event","")
+        if ev in ("completed","no-answer","busy","failed","canceled"):
+            _send_alert(
+                f"Call status: {ev}",
+                f"From: {LAST_TRANSFER.get('from','')}\n"
+                f"To: {LAST_TRANSFER.get('to','')}\n"
+                f"CallSid: {LAST_TRANSFER.get('call_sid','')}\n"
+                f"DialSid: {LAST_TRANSFER.get('dial_sid','')}\n"
+                f"Duration: {LAST_TRANSFER.get('duration','')}s"
+            )
+    except Exception:
+        pass
+    return ("", 204)
+
+def _hotline_target():
+    return (os.getenv("AFTER_HOURS_FORWARD") or "").strip()
+
+def smart_menu_twiml_new():
+    # open → use existing menu
+    try:
+        if _is_open_now():
+            return menu_twiml()
+    except Exception:
+        # if clock parsing fails, fall back to original menu
+        return menu_twiml()
+    # closed:
+    ht = _hotline_target()
+    if ht:
+        return f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>We’re currently closed. Connecting you to our on-call line.</Say>
+  <Dial timeout="45" answerOnBridge="true"{_caller_attr()} action="https://autonomy-ivr.onrender.com/voice/transfer-result" method="POST"
+        statusCallback="https://autonomy-ivr.onrender.com/voice/transfer-status2" statusCallbackEvent="initiated ringing answered completed">
+    <Number>{ht}</Number>
+  </Dial>
+  <Say>No one could be reached.</Say>
+  <Pause length="1"/><Say>Please leave a short message after the tone.</Say>
+  <Record{_vm_attrs()} maxLength="90" playBeep="true" action="https://autonomy-ivr.onrender.com/voice/voicemail-done2" method="POST"/>
+</Response>'''
+    # no hotline → speak hours + offer text + VM
+    return f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>We’re currently closed. {hours_sentence(None)}.</Say>
+  <Pause length="1"/>
+  <Gather input="speech" action="/voice/sms-consent2?include=hours" method="POST" language="en-US" timeout="6" speechTimeout="auto">
+    <Say>Would you like our hours sent by text? Say yes to receive a text, or say no to skip.</Say>
+  </Gather>
+  <Say>No input received.</Say>
+  <Say>You can also leave a short message after the tone.</Say>
+  <Record{_vm_attrs()} maxLength="90" playBeep="true" action="https://autonomy-ivr.onrender.com/voice/voicemail-done2" method="POST"/>
+</Response>'''
+
+# swap-in: have /voice use the new function
+smart_menu_twiml = smart_menu_twiml_new
