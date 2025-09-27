@@ -734,9 +734,8 @@ def admin_last_transfer2():
     return jsonify(_load_last_transfer() or {"info":"none yet"}), 200
 @app.route("/voice/transfer-status2", methods=["POST","GET"])
 def transfer_status2():
-    """Store last transfer in memory and /tmp; optionally email a summary."""
     global LAST_TRANSFER
-    def _e164(s):
+    def _nz(s):
         import re
         s = (s or "").strip()
         d = re.sub(r"\D+","", s)
@@ -744,19 +743,22 @@ def transfer_status2():
         if d.startswith("1") and len(d)==11: return "+"+d
         if len(d)==10: return "+1"+d
         return "+"+d
-
     LAST_TRANSFER = {
         "event": (request.values.get("CallStatus") or request.values.get("DialCallStatus") or ""),
-        "to": _e164(request.values.get("To")),
-        "from": _e164(request.values.get("From")),
+        "to": _nz(request.values.get("To")),
+        "from": _nz(request.values.get("From")),
         "dial_sid": (request.values.get("DialCallSid") or ""),
         "call_sid": (request.values.get("CallSid") or ""),
         "duration": (request.values.get("CallDuration") or request.values.get("DialCallDuration") or ""),
     }
-    _persist_last_transfer(LAST_TRANSFER)
-
-    ev = LAST_TRANSFER.get("event","")
+    # persist for multi-worker visibility (helper you added earlier)
     try:
+        _persist_last_transfer(LAST_TRANSFER)
+    except Exception:
+        pass
+    # optional alert
+    try:
+        ev = LAST_TRANSFER.get("event","")
         if ev in ("completed","no-answer","busy","failed","canceled"):
             _send_alert(
                 f"Call status: {ev}",
