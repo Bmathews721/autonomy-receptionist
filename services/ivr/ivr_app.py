@@ -9,10 +9,10 @@ def _xml(s): return Response(s, status=200, mimetype="text/xml")
 def load_hours():
     env = os.getenv("BUSINESS_HOURS_JSON")
     if env:
-        try: return json.loads(env)
-    _persist_last_transfer(LAST_TRANSFER)
-except Exception:
-    pass
+        try:
+        return json.loads(env)
+    except Exception:
+        pass
         except Exception: pass
     for p in ("services/ivr/hours.json","hours.json","config/hours.json"):
         if os.path.exists(p):
