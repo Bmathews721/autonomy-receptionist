@@ -542,3 +542,13 @@ def voice_route():
   <Say>Sorry, I didn’t catch that.</Say>
   <Redirect>/voice</Redirect>
 </Response>""")
+@app.route("/", methods=["GET"])
+def root():
+    return "Autonomy IVR up", 200
+@app.get("/admin/version")
+def version():
+    import time
+    return jsonify({
+        "commit": os.getenv("RENDER_GIT_COMMIT") or os.getenv("COMMIT","local"),
+        "ts": time.strftime("%Y-%m-%d %H:%M:%S")
+    }), 200
