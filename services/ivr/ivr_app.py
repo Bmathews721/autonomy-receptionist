@@ -10,7 +10,7 @@ def load_hours():
     env = os.getenv("BUSINESS_HOURS_JSON")
     if env:
         try:
-        return json.loads(env)
+            return json.loads(env)
     except Exception:
         pass
         except Exception: pass
