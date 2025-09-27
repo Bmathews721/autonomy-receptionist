@@ -649,3 +649,31 @@ def transfer_status():
     except Exception:
         pass
     return ("", 204)
+
+def _save_hours(payload: dict) -> bool:
+    try:
+        os.makedirs("services/ivr", exist_ok=True)
+        with open("services/ivr/hours.json","w",encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+        return True
+    except Exception:
+        return False
+
+@app.route("/admin/hours", methods=["POST"])
+def admin_hours_update():
+    try:
+        data = request.get_json(force=True)
+        # minimal validation
+        tz = data.get("timezone") or "America/New_York"
+        out = {"timezone": tz}
+        for d in ["mon","tue","wed","thu","fri","sat","sun"]:
+            out[d] = (data.get(d) or "").strip() or "Closed"
+        if not _save_hours(out):
+            return jsonify({"ok": False, "error": "write_failed"}), 500
+        return jsonify({"ok": True, "hours": out}), 200
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 400
+
+def _hotline_target():
+    return os.getenv("AFTER_HOURS_FORWARD","").strip()
+
