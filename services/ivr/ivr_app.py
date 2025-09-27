@@ -617,49 +617,6 @@ def vm_transcript():
         except Exception:
             pass
     return ("", 204)
-@app.route("/voice/transfer-status2", methods=["POST","GET"])
-def transfer_status():
-    def _nz(s):
-        import re
-        s = (s or "").strip()
-        d = re.sub(r"\D+","", s)
-        if not d: return s
-        if d.startswith("1") and len(d)==11: return "+"+d
-        if len(d)==10: return "+1"+d
-        return "+"+d
-    global LAST_TRANSFER
-    LAST_TRANSFER = {
-        "event": (request.values.get("CallStatus") or request.values.get("DialCallStatus") or ""),
-        "to": (request.values.get("To") or ""),
-        "from": (request.values.get("From") or ""),
-        "dial_sid": (request.values.get("DialCallSid") or ""),
-        "call_sid": (request.values.get("CallSid") or ""),
-        "duration": (request.values.get("CallDuration") or request.values.get("DialCallDuration") or ""),
-    }
-    try:
-        ev = LAST_TRANSFER.get("event","")
-        if ev in ("completed","no-answer","busy","failed","canceled"):
-            _send_alert(
-                f"Call status: {ev}",
-                f"From: {LAST_TRANSFER.get('from','')}\n"
-                f"To: {LAST_TRANSFER.get('to','')}\n"
-                f"CallSid: {LAST_TRANSFER.get('call_sid','')}\n"
-                f"DialSid: {LAST_TRANSFER.get('dial_sid','')}\n"
-                f"Duration: {LAST_TRANSFER.get('duration','')}s"
-            )
-    except Exception:
-        pass
-    return ("", 204)
-
-def _save_hours(payload: dict) -> bool:
-    try:
-        os.makedirs("services/ivr", exist_ok=True)
-        with open("services/ivr/hours.json","w",encoding="utf-8") as f:
-            json.dump(payload, f, indent=2)
-        return True
-    except Exception:
-        return False
-
 @app.route("/admin/hours", methods=["POST"])
 def admin_hours_update():
     try:
@@ -775,3 +732,37 @@ def admin_last_transfer2():
     if LAST_TRANSFER:
         return jsonify(LAST_TRANSFER), 200
     return jsonify(_load_last_transfer() or {"info":"none yet"}), 200
+@app.route("/voice/transfer-status2", methods=["POST","GET"])
+def transfer_status2():
+    global LAST_TRANSFER
+    def _nz(s):
+        import re
+        s = (s or "").strip()
+        d = re.sub(r"\D+","", s)
+        if not d: return s
+        if d.startswith("1") and len(d)==11: return "+"+d
+        if len(d)==10: return "+1"+d
+        return "+"+d
+    LAST_TRANSFER = {
+        "event": (request.values.get("CallStatus") or request.values.get("DialCallStatus") or ""),
+        "to": _nz(request.values.get("To")),
+        "from": _nz(request.values.get("From")),
+        "dial_sid": (request.values.get("DialCallSid") or ""),
+        "call_sid": (request.values.get("CallSid") or ""),
+        "duration": (request.values.get("CallDuration") or request.values.get("DialCallDuration") or ""),
+    }
+    _persist_last_transfer(LAST_TRANSFER)
+    ev = LAST_TRANSFER.get("event","")
+    try:
+        if ev in ("completed","no-answer","busy","failed","canceled"):
+            _send_alert(
+                f"Call status: {ev}",
+                f"From: {LAST_TRANSFER.get('from','')}\n"
+                f"To: {LAST_TRANSFER.get('to','')}\n"
+                f"CallSid: {LAST_TRANSFER.get('call_sid','')}\n"
+                f"DialSid: {LAST_TRANSFER.get('dial_sid','')}\n"
+                f"Duration: {LAST_TRANSFER.get('duration','')}s"
+            )
+    except Exception:
+        pass
+    return ("", 204)
