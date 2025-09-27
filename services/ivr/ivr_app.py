@@ -405,8 +405,18 @@ def transfer_status():
         "to": (request.values.get("To") or ""),
         "from": (request.values.get("From") or ""),
         "dial_sid": (request.values.get("DialCallSid") or ""),
-        "call_sid": (request.values.get("CallSid") or "")
+        "call_sid": (request.values.get("CallSid") or ""),
+        "duration": (request.values.get("CallDuration") or request.values.get("DialCallDuration") or ""),
     }
+    try:
+        ev = LAST_TRANSFER.get("event","")
+        if ev in ("completed","no-answer","busy","failed","canceled"):
+            _send_alert(
+                f"Call status: {ev}",
+                f"From: {LAST_TRANSFER.get(from,)}\nTo: {LAST_TRANSFER.get(to,)}\nCallSid: {LAST_TRANSFER.get(call_sid,)}\nDialSid: {LAST_TRANSFER.get(dial_sid,)}\nDuration: {LAST_TRANSFER.get(duration,)}s"
+            )
+    except Exception:
+        pass
     return ("", 204)
 @app.route("/voice/trigger-operator", methods=["GET","POST"])
 def trigger_operator():
