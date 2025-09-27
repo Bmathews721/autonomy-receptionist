@@ -1,0 +1,22 @@
+[
+  {
+    "id": "pricing",
+    "keywords": ["price", "pricing", "cost", "plan", "subscription"],
+    "answer": "Our plans start at $200/month. Pro is $300/month with added features."
+  },
+  {
+    "id": "hours",
+    "keywords": ["hours", "open", "closing", "time", "business hours"],
+    "answer": "We’re open Monday–Friday 9 AM–5 PM; closed Saturday and Sunday."
+  },
+  {
+    "id": "location",
+    "keywords": ["location", "address", "where", "directions"],
+    "answer": "We operate virtually and support clients anywhere in the U.S."
+  },
+  {
+    "id": "walkins",
+    "keywords": ["walk in", "walk-in", "walkins", "visit", "walkins"],
+    "answer": "Visits are by appointment; we respond quickly via phone or text."
+  }
+]

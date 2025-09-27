@@ -485,6 +485,20 @@ def voice_route():
     speech = (request.values.get("SpeechResult") or "").strip()
     intent = route_intent(speech)
 
+    ans = faq_answer(speech)
+    if ans and intent == "unknown":
+        enc = quote(ans)
+        return _xml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>{ans}</Say>
+  <Pause length="1"/>
+  <Gather input="speech" action="/voice/sms-consent2?include=faq&body={enc}" method="POST" language="en-US" timeout="6" speechTimeout="auto">
+    <Say>Would you like that sent by text? Say yes to receive a text, or say no to skip.</Say>
+  </Gather>
+  <Say>No input received.</Say>
+  <Redirect>/voice</Redirect>
+</Response>""")
+
     if intent == "hours":
         return _xml("""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -552,3 +566,44 @@ def version():
         "commit": os.getenv("RENDER_GIT_COMMIT") or os.getenv("COMMIT","local"),
         "ts": time.strftime("%Y-%m-%d %H:%M:%S")
     }), 200
+
+# --- FAQ loader and matcher ---
+def load_faq():
+    p = "services/ivr/faq.json"
+    if os.path.exists(p):
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return []
+    return []
+
+def faq_answer(text):
+    t = (text or "").lower()
+    for item in load_faq():
+        kws = item.get("keywords", [])
+        if any(k in t for k in kws):
+            return item.get("answer") or ""
+    return ""
+@app.get("/admin/faq")
+def admin_faq():
+    return jsonify(load_faq()), 200
+
+# --- FAQ loader and matcher ---
+def load_faq():
+    p = "services/ivr/faq.json"
+    if os.path.exists(p):
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return []
+    return []
+
+def faq_answer(text):
+    t = (text or "").lower()
+    for item in load_faq():
+        kws = item.get("keywords", [])
+        if any(k in t for k in kws):
+            return item.get("answer") or ""
+    return ""
