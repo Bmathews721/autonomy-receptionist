@@ -166,31 +166,12 @@ def voice_route():
   <Record maxLength="90" playBeep="true" action="/voice/voicemail-done2" method="POST"/>
 </Response>''')
     if intent == "operator":
-    cs = _csid()
-    rec = CAPTURED.get(cs, {}) if cs else {}
-    if not rec.get("name") or not rec.get("reason"):
-        return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+    return _xml("""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Redirect>https://autonomy-ivr.onrender.com/voice/capture-start</Redirect>
 </Response>""")
-    num = get_forward_number()
-        if not num:
-            return _xml('''<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say>The operator transfer is not configured yet.</Say>
-  <Pause length="1"/><Redirect>/voice</Redirect>
-</Response>''')
-        return _xml(f'''<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say>Connecting you now.</Say>
-  {_record_say()}
-  <Dial timeout="45" answerOnBridge="true"{_caller_attr()} action="https://autonomy-ivr.onrender.com/voice/transfer-result" method="POST" statusCallback="https://autonomy-ivr.onrender.com/voice/transfer-status" statusCallbackEvent="initiated ringing answered completed">
-    <Number>{num}</Number>
-  </Dial>
-  <Say>No one could be reached.</Say>
-  <Pause length="1"/><Say>Would you like to leave a message?</Say>
-  <Record maxLength="90" playBeep="true" action="/voice/voicemail-done2" method="POST"/>
-</Response>''')
+
+
     if intent == "repeat":
         return _xml(menu_twiml())
     return _xml('''<?xml version="1.0" encoding="UTF-8"?>
