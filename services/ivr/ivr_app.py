@@ -10,6 +10,9 @@ def load_hours():
     env = os.getenv("BUSINESS_HOURS_JSON")
     if env:
         try: return json.loads(env)
+    _persist_last_transfer(LAST_TRANSFER)
+except Exception:
+    pass
         except Exception: pass
     for p in ("services/ivr/hours.json","hours.json","config/hours.json"):
         if os.path.exists(p):
@@ -341,6 +344,9 @@ def _send_email_sg(subject: str, text: str) -> bool:
         "content":[{"type":"text/plain","value":text}]
     }
     try:
+    _persist_last_transfer(LAST_TRANSFER)
+except Exception:
+    pass
         pass
     _persist_last_transfer(LAST_TRANSFER)
         req = urllib.request.Request(
@@ -367,6 +373,9 @@ def _send_sms_alert(text: str) -> bool:
     if svc: data["MessagingServiceSid"] = svc
     else:   data["From"] = frm
     try:
+    _persist_last_transfer(LAST_TRANSFER)
+except Exception:
+    pass
         pass
         req = urllib.request.Request(
             f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json",
@@ -390,6 +399,9 @@ def voicemail_done2():
     dur = (request.values.get("RecordingDuration") or "").strip()
     if rec:
         try:
+    _persist_last_transfer(LAST_TRANSFER)
+except Exception:
+    pass
             pass
             _send_alert("New voicemail",
                 f"From: {caller}\nDuration: {dur}s\nRecording: {rec}.mp3")
@@ -565,6 +577,9 @@ def load_faq():
     p = "services/ivr/faq.json"
     if os.path.exists(p):
         try:
+    _persist_last_transfer(LAST_TRANSFER)
+except Exception:
+    pass
             pass
             with open(p, "r", encoding="utf-8") as f:
                 return json.load(f)
@@ -588,6 +603,9 @@ def load_faq():
     p = "services/ivr/faq.json"
     if os.path.exists(p):
         try:
+    _persist_last_transfer(LAST_TRANSFER)
+except Exception:
+    pass
             pass
             with open(p, "r", encoding="utf-8") as f:
                 return json.load(f)
@@ -617,6 +635,9 @@ def vm_transcript():
     sid = (request.values.get("CallSid") or "").strip()
     if txt or rec:
         try:
+    _persist_last_transfer(LAST_TRANSFER)
+except Exception:
+    pass
             pass
             body = f"From: {caller}\nCallSid: {sid}\n\nTranscript:\n{txt}\n\nRecording: {rec}.mp3"
             _send_alert("Voicemail transcript", body)
@@ -626,6 +647,9 @@ def vm_transcript():
 @app.route("/admin/hours", methods=["POST"])
 def admin_hours_update():
     try:
+    _persist_last_transfer(LAST_TRANSFER)
+except Exception:
+    pass
         pass
         data = request.get_json(force=True)
         # minimal validation
@@ -663,6 +687,9 @@ def transfer_status2():
         "duration": (request.values.get("CallDuration") or request.values.get("DialCallDuration") or ""),
     }
     try:
+    _persist_last_transfer(LAST_TRANSFER)
+except Exception:
+    pass
         pass
         ev = LAST_TRANSFER.get("event","")
         if ev in ("completed","no-answer","busy","failed","canceled"):
@@ -684,6 +711,9 @@ def _hotline_target():
 def smart_menu_twiml_new():
     # open → use existing menu
     try:
+    _persist_last_transfer(LAST_TRANSFER)
+except Exception:
+    pass
         pass
         if _is_open_now():
             return menu_twiml()
@@ -723,6 +753,9 @@ smart_menu_twiml = smart_menu_twiml_new
 # --- Persist last transfer for multi-worker visibility ---
 def _persist_last_transfer(data: dict):
     try:
+    _persist_last_transfer(LAST_TRANSFER)
+except Exception:
+    pass
         pass
         with open("/tmp/ivr_last_transfer.json","w",encoding="utf-8") as f:
             json.dump(data, f)
@@ -731,6 +764,9 @@ def _persist_last_transfer(data: dict):
 
 def _load_last_transfer():
     try:
+    _persist_last_transfer(LAST_TRANSFER)
+except Exception:
+    pass
         pass
         with open("/tmp/ivr_last_transfer.json","r",encoding="utf-8") as f:
             return json.load(f)
@@ -764,12 +800,18 @@ def transfer_status2():
     }
     # persist for multi-worker visibility (helper you added earlier)
     try:
+    _persist_last_transfer(LAST_TRANSFER)
+except Exception:
+    pass
         pass
         _persist_last_transfer(LAST_TRANSFER)
     except Exception:
         pass
     # optional alert
     try:
+    _persist_last_transfer(LAST_TRANSFER)
+except Exception:
+    pass
         pass
         ev = LAST_TRANSFER.get("event","")
         if ev in ("completed","no-answer","busy","failed","canceled"):
