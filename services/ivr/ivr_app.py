@@ -170,6 +170,10 @@ def voice_route():
 <Response>
   <Redirect>https://autonomy-ivr.onrender.com/voice/capture-start</Redirect>
 </Response>""")
+    return _xml("""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Redirect>https://autonomy-ivr.onrender.com/voice/capture-start</Redirect>
+</Response>""")
 
 
     if intent == "repeat":
