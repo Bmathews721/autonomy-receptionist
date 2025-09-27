@@ -397,27 +397,6 @@ def voicemail_done2():
   <Pause length="1"/><Say>Would you like anything else?</Say>
   <Redirect>/voice</Redirect>
 </Response>''')
-@app.route("/voice/transfer-status", methods=["POST","GET"])
-def transfer_status():
-    global LAST_TRANSFER
-    LAST_TRANSFER = {
-        "event": (request.values.get("CallStatus") or request.values.get("DialCallStatus") or ""),
-        "to": (request.values.get("To") or ""),
-        "from": (request.values.get("From") or ""),
-        "dial_sid": (request.values.get("DialCallSid") or ""),
-        "call_sid": (request.values.get("CallSid") or ""),
-        "duration": (request.values.get("CallDuration") or request.values.get("DialCallDuration") or ""),
-    }
-    try:
-        ev = LAST_TRANSFER.get("event","")
-        if ev in ("completed","no-answer","busy","failed","canceled"):
-            _send_alert(
-                f"Call status: {ev}",
-                f"From: {LAST_TRANSFER.get(from,)}\nTo: {LAST_TRANSFER.get(to,)}\nCallSid: {LAST_TRANSFER.get(call_sid,)}\nDialSid: {LAST_TRANSFER.get(dial_sid,)}\nDuration: {LAST_TRANSFER.get(duration,)}s"
-            )
-    except Exception:
-        pass
-    return ("", 204)
 @app.route("/voice/trigger-operator", methods=["GET","POST"])
 def trigger_operator():
     num = get_forward_number()
@@ -636,4 +615,29 @@ def vm_transcript():
             _send_alert("Voicemail transcript", body)
         except Exception:
             pass
+    return ("", 204)
+@app.route("/voice/transfer-status", methods=["POST","GET"])
+def transfer_status():
+    global LAST_TRANSFER
+    LAST_TRANSFER = {
+        "event": (request.values.get("CallStatus") or request.values.get("DialCallStatus") or ""),
+        "to": (request.values.get("To") or ""),
+        "from": (request.values.get("From") or ""),
+        "dial_sid": (request.values.get("DialCallSid") or ""),
+        "call_sid": (request.values.get("CallSid") or ""),
+        "duration": (request.values.get("CallDuration") or request.values.get("DialCallDuration") or ""),
+    }
+    try:
+        ev = LAST_TRANSFER.get("event","")
+        if ev in ("completed","no-answer","busy","failed","canceled"):
+            _send_alert(
+                f"Call status: {ev}",
+                f"From: {LAST_TRANSFER.get('from','')}\n"
+                f"To: {LAST_TRANSFER.get('to','')}\n"
+                f"CallSid: {LAST_TRANSFER.get('call_sid','')}\n"
+                f"DialSid: {LAST_TRANSFER.get('dial_sid','')}\n"
+                f"Duration: {LAST_TRANSFER.get('duration','')}s"
+            )
+    except Exception:
+        pass
     return ("", 204)
